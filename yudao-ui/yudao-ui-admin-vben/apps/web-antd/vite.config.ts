@@ -4,6 +4,12 @@ export default defineConfig(async () => {
   return {
     application: {},
     vite: {
+      build: {
+        modulePreload: {
+          resolveDependencies: (_url, deps) =>
+            deps.filter((dep) => dep.endsWith('.css')),
+        },
+      },
       server: {
         allowedHosts: true,
         proxy: {

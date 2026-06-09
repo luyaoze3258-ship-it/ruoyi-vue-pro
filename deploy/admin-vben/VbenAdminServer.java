@@ -35,10 +35,11 @@ public class VbenAdminServer {
     private static final String BACKEND_BASE = trimTrailingSlash(
             System.getenv().getOrDefault("BACKEND_BASE", "http://ruoyi-vue-pro-server:48080")
     );
+    private static final int HTTP_BACKLOG = Integer.parseInt(System.getenv().getOrDefault("HTTP_BACKLOG", "2048"));
 
     public static void main(String[] args) throws IOException {
         int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
-        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress(port), HTTP_BACKLOG);
         server.createContext("/", VbenAdminServer::handle);
         server.setExecutor(Executors.newCachedThreadPool());
         server.start();
@@ -75,9 +76,8 @@ public class VbenAdminServer {
     private static void serveStatic(HttpExchange exchange, String path) throws IOException {
         Path file = resolveStaticFile(path);
         boolean index = STATIC_ROOT.resolve("index.html").equals(file);
-        byte[] body = Files.readAllBytes(file);
         String cacheControl = index ? "no-store" : "public, max-age=31536000, immutable";
-        send(exchange, 200, contentType(file), cacheControl, body);
+        sendFile(exchange, file, contentType(file), cacheControl);
     }
 
     private static Path resolveStaticFile(String path) {
@@ -167,17 +167,36 @@ public class VbenAdminServer {
             throws IOException {
         exchange.getResponseHeaders().set("Content-Type", contentType);
         exchange.getResponseHeaders().set("Cache-Control", cacheControl);
+        if (isHead(exchange)) {
+            exchange.sendResponseHeaders(status, -1);
+            exchange.close();
+            return;
+        }
         exchange.sendResponseHeaders(status, body.length);
         try (OutputStream out = exchange.getResponseBody()) {
             out.write(body);
         }
     }
 
-    private static String contentType(Path file) throws IOException {
-        String probed = Files.probeContentType(file);
-        if (probed != null) {
-            return probed;
+    private static void sendFile(HttpExchange exchange, Path file, String contentType, String cacheControl)
+            throws IOException {
+        exchange.getResponseHeaders().set("Content-Type", contentType);
+        exchange.getResponseHeaders().set("Cache-Control", cacheControl);
+        exchange.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
+        long length = Files.size(file);
+        if (isHead(exchange)) {
+            exchange.sendResponseHeaders(200, -1);
+            exchange.close();
+            return;
         }
+        exchange.sendResponseHeaders(200, length);
+        try (InputStream in = Files.newInputStream(file);
+             OutputStream out = exchange.getResponseBody()) {
+            in.transferTo(out);
+        }
+    }
+
+    private static String contentType(Path file) throws IOException {
         String name = file.getFileName().toString().toLowerCase(Locale.ROOT);
         if (name.endsWith(".js") || name.endsWith(".mjs")) {
             return "text/javascript; charset=utf-8";
@@ -194,7 +213,15 @@ public class VbenAdminServer {
         if (name.endsWith(".woff2")) {
             return "font/woff2";
         }
+        String probed = Files.probeContentType(file);
+        if (probed != null) {
+            return probed;
+        }
         return "application/octet-stream";
+    }
+
+    private static boolean isHead(HttpExchange exchange) {
+        return "HEAD".equalsIgnoreCase(exchange.getRequestMethod());
     }
 
     private static String trimTrailingSlash(String value) {
