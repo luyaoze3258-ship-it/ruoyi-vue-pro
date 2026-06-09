@@ -1,0 +1,12 @@
+.git
+**/.git
+**/node_modules
+**/.turbo
+**/.cache
+**/target
+yudao-ui/yudao-ui-admin-vben/**/dist
+!yudao-ui/yudao-ui-admin-vben/apps/web-antd/dist
+!yudao-ui/yudao-ui-admin-vben/apps/web-antd/dist/**
+**/dist.zip
+**/dist.tar
+**/dist.war

@@ -128,7 +128,7 @@ spec:
         - name: tencent-registry
       containers:
         - name: admin
-          image: ekb-repo.tencentcloudcr.com/library/ruoyi-vue-pro-admin:2026.05-bpm
+          image: ekb-repo.tencentcloudcr.com/library/ruoyi-vue-pro-admin:2026.05-vben
           imagePullPolicy: Always
           ports:
             - name: http
@@ -197,6 +197,13 @@ spec:
     - host: guixu.k8s01.ekuaibao.net
       http:
         paths:
+          - path: /infra/ws
+            pathType: Prefix
+            backend:
+              service:
+                name: ruoyi-vue-pro-server
+                port:
+                  number: 48080
           - path: /
             pathType: ImplementationSpecific
             backend:
