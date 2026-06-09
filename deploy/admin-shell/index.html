@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>归墟流程平台</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #172033;
+        --muted: #667085;
+        --line: #d7dde8;
+        --brand: #0f6bff;
+        --brand-dark: #0848b8;
+        --panel: #ffffff;
+        --band: #f5f7fb;
+        --ok: #087443;
+        --warn: #9a5b00;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Inter, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+        color: var(--ink);
+        background: var(--band);
+      }
+      header {
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 32px;
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 700;
+        font-size: 18px;
+      }
+      .mark {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        background: var(--brand);
+        color: white;
+        display: grid;
+        place-items: center;
+        font-weight: 800;
+      }
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 40px 24px;
+      }
+      .topline {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+        gap: 28px;
+        align-items: stretch;
+      }
+      h1 {
+        margin: 0;
+        font-size: 34px;
+        line-height: 1.18;
+        letter-spacing: 0;
+      }
+      p {
+        margin: 12px 0 0;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+      .panel, .tile {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+      .panel { padding: 28px; }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 28px;
+      }
+      a.button, button {
+        border: 0;
+        border-radius: 6px;
+        padding: 11px 16px;
+        font-size: 14px;
+        font-weight: 650;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      .primary {
+        background: var(--brand);
+        color: #fff;
+      }
+      .secondary {
+        background: #eaf1ff;
+        color: var(--brand-dark);
+      }
+      .status-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-top: 24px;
+      }
+      .tile { padding: 18px; }
+      .label {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .value {
+        margin-top: 8px;
+        font-size: 24px;
+        font-weight: 760;
+      }
+      .workflows {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-top: 24px;
+      }
+      .workflow-title {
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      .api-result {
+        margin-top: 18px;
+        padding: 14px;
+        border-radius: 6px;
+        background: #f7f9fc;
+        color: var(--muted);
+        min-height: 48px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 13px;
+        overflow-wrap: anywhere;
+      }
+      .ok { color: var(--ok); }
+      .warn { color: var(--warn); }
+      footer {
+        margin-top: 36px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      @media (max-width: 860px) {
+        header { padding: 0 18px; }
+        main { padding: 24px 16px; }
+        .topline, .status-grid, .workflows { grid-template-columns: 1fr; }
+        h1 { font-size: 28px; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand"><span class="mark">GX</span><span>归墟流程平台</span></div>
+      <span id="runtime" class="label">RuoYi-Vue-Pro / BPM</span>
+    </header>
+    <main>
+      <section class="topline">
+        <div class="panel">
+          <h1>企业审批与流程服务已部署</h1>
+          <p>当前页面是部署入口壳，后端已经切换到 RuoYi-Vue-Pro 并启用 Flowable 工作流模块。完整后台 UI 可以在后续迭代中替换为官方 Vue3 或 Vben 前端镜像。</p>
+          <div class="actions">
+            <button class="primary" onclick="checkBackend()">检测后端</button>
+            <a class="button secondary" href="/actuator/health" target="_blank" rel="noreferrer">健康端点</a>
+            <a class="button secondary" href="/admin-api/bpm/category/simple-list" target="_blank" rel="noreferrer">BPM 接口</a>
+          </div>
+          <div id="api-result" class="api-result">等待检测。</div>
+        </div>
+        <div class="panel">
+          <div class="label">默认账号</div>
+          <div class="value">admin</div>
+          <p>数据库已初始化 RuoYi-Vue-Pro 基础数据和工作流程菜单。默认密码沿用 upstream 初始化数据。</p>
+          <div class="api-result">域名：guixu.k8s01.ekuaibao.net<br />后端：ruoyi-vue-pro-server:48080<br />前端：OpenJDK 静态入口 + API 代理</div>
+        </div>
+      </section>
+
+      <section class="status-grid">
+        <div class="tile">
+          <div class="label">部署模式</div>
+          <div class="value">Docker</div>
+        </div>
+        <div class="tile">
+          <div class="label">运行平台</div>
+          <div class="value">Linux amd64</div>
+        </div>
+        <div class="tile">
+          <div class="label">流程引擎</div>
+          <div class="value">Flowable</div>
+        </div>
+      </section>
+
+      <section class="workflows">
+        <div class="tile">
+          <div class="workflow-title">流程模型</div>
+          <div class="label">BPMN / SIMPLE 设计器后端接口已启用。</div>
+        </div>
+        <div class="tile">
+          <div class="workflow-title">流程表单</div>
+          <div class="label">支持动态表单、表单字段配置和流程关联。</div>
+        </div>
+        <div class="tile">
+          <div class="workflow-title">审批任务</div>
+          <div class="label">待办、已办、管理员任务接口已启用。</div>
+        </div>
+        <div class="tile">
+          <div class="workflow-title">流程实例</div>
+          <div class="label">发起、撤销、抄送、打印数据接口已启用。</div>
+        </div>
+      </section>
+
+      <footer>Shell build for deployment verification. Replaceable with the official RuoYi-Vue-Pro admin frontend image.</footer>
+    </main>
+    <script>
+      async function checkBackend() {
+        const el = document.getElementById("api-result");
+        el.textContent = "检测中...";
+        try {
+          const health = await fetch("/actuator/health", { cache: "no-store" });
+          const text = await health.text();
+          if (health.ok) {
+            el.innerHTML = '<span class="ok">后端健康检查通过。</span><br />' + text.replace(/[<>&]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
+            return;
+          }
+          el.innerHTML = '<span class="warn">后端返回非 2xx。</span><br />HTTP ' + health.status + " " + text;
+        } catch (err) {
+          el.innerHTML = '<span class="warn">后端检测失败。</span><br />' + String(err);
+        }
+      }
+      checkBackend();
+    </script>
+  </body>
+</html>
