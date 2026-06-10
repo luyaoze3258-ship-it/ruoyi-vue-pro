@@ -53,7 +53,6 @@ import {
   returnTask,
   signCreateTask,
   signDeleteTask,
-  syncGuanlanAiApprovalTask,
   transferTask,
 } from '#/api/bpm/task';
 import { setConfAndFields2 } from '#/components/form-create';
@@ -83,7 +82,6 @@ const router = useRouter();
 const userStore = useUserStore();
 const userId = userStore.userInfo?.id;
 const formLoading = ref(false); // 表单加载中
-const aiApprovalSyncLoading = ref(false); // AI 审批主动同步中
 const popOverVisible: any = ref({
   approve: false,
   reject: false,
@@ -594,21 +592,6 @@ async function handleReCreate() {
   });
 }
 
-/** 主动同步观澜 AI 审批结果 */
-async function handleSyncAiApproval() {
-  if (!runningTask.value?.id) {
-    return;
-  }
-  aiApprovalSyncLoading.value = true;
-  try {
-    const synced = await syncGuanlanAiApprovalTask(runningTask.value.id);
-    message.success(synced ? 'AI 审批结果已同步' : '暂无可同步的 AI 审批结果');
-    reload();
-  } finally {
-    aiApprovalSyncLoading.value = false;
-  }
-}
-
 /** 获取减签人员标签 */
 function getDeleteSignUserLabel(task: any): string {
   const deptName = task?.assigneeUser?.deptName || task?.ownerUser?.deptName;
@@ -664,15 +647,6 @@ function isEndProcessStatus(status: number) {
     isEndStatus = true;
   }
   return isEndStatus;
-}
-
-/** 是否显示 AI 审批主动同步按钮 */
-function isShowAiApprovalSyncButton() {
-  return (
-    runningTask.value &&
-    isHandleTaskStatus() &&
-    runningTask.value.taskDefinitionKey === 'AiApprovalNode'
-  );
 }
 
 /** 是否显示按钮 */
@@ -891,17 +865,6 @@ defineExpose({ loadTodoTask });
           </div>
         </template>
       </Popover>
-
-      <!-- 【同步 AI 审批结果】按钮 -->
-      <Button
-        v-if="isShowAiApprovalSyncButton()"
-        type="dashed"
-        :loading="aiApprovalSyncLoading"
-        @click="handleSyncAiApproval"
-      >
-        <IconifyIcon :size="14" icon="lucide:refresh-cw" />
-        同步AI结果
-      </Button>
 
       <!-- 【拒绝】按钮 -->
       <Popover

@@ -23,7 +23,7 @@ spec:
         - name: tencent-registry
       containers:
         - name: server
-          image: ekb-repo.tencentcloudcr.com/library/ruoyi-vue-pro-server:2026.05-ai-approval-poll-20260610230739
+          image: ekb-repo.tencentcloudcr.com/library/ruoyi-vue-pro-server:2026.05-ai-approval-cron-scheduled-20260611003530
           imagePullPolicy: Always
           ports:
             - name: http
@@ -66,6 +66,8 @@ spec:
                 --yudao.web.admin-ui.url=https://guixu.k8s01.ekuaibao.net
                 --yudao.captcha.enable=false
                 --yudao.bpm.ai-approval.enabled=true
+                --yudao.bpm.ai-approval.polling.enabled=true
+                --yudao.bpm.ai-approval.polling.batch-size=20
                 --yudao.bpm.ai-approval.guanlan.callback.hmac-secret=$(GUANLAN_CALLBACK_HMAC_SECRET)
                 --yudao.demo=false
           readinessProbe:
@@ -135,7 +137,7 @@ spec:
         - name: tencent-registry
       containers:
         - name: admin
-          image: ekb-repo.tencentcloudcr.com/library/ruoyi-vue-pro-admin:2026.05-ai-approval-poll-20260610231458
+          image: ekb-repo.tencentcloudcr.com/library/ruoyi-vue-pro-admin:2026.05-ai-approval-cron-20260611002347
           imagePullPolicy: Always
           ports:
             - name: http

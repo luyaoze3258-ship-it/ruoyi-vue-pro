@@ -25,6 +25,12 @@ public class BpmAiApprovalProperties {
     @Valid
     private Guanlan guanlan = new Guanlan();
 
+    /**
+     * 观澜结果定时查询配置。
+     */
+    @Valid
+    private Polling polling = new Polling();
+
     @Data
     public static class Guanlan {
 
@@ -47,6 +53,21 @@ public class BpmAiApprovalProperties {
         private String callbackIdHeader = "X-Callback-Id";
 
         private String testModeHeader = "X-Approval-Test-Mode";
+
+    }
+
+    @Data
+    public static class Polling {
+
+        /**
+         * 是否启用观澜结果定时查询。
+         */
+        private Boolean enabled = false;
+
+        /**
+         * 每次查询的最大任务数量。
+         */
+        private Integer batchSize = 20;
 
     }
 

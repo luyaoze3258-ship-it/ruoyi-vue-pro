@@ -247,11 +247,7 @@ public class FlowableUtils {
         }
 
         // 解析表单配置
-        Map<String, BpmFormFieldVO> formFieldsMap = new LinkedHashMap<>();
-        processDefinitionInfo.getFormFields().forEach(formFieldStr -> {
-            JsonNode formFieldNode = JsonUtils.parseObject(formFieldStr, JsonNode.class);
-            parseFormField(formFieldNode, formFieldsMap);
-        });
+        Map<String, BpmFormFieldVO> formFieldsMap = parseFormFields(processDefinitionInfo);
 
         // 情况一：当自定义了摘要
         if (ObjectUtil.isNotNull(processDefinitionInfo.getSummarySetting())
@@ -272,6 +268,38 @@ public class FlowableUtils {
                 .map(entry -> new KeyValue<>(entry.getValue().getTitle(),
                         MapUtil.getStr(processVariables, entry.getValue().getField(), "")))
                 .collect(Collectors.toList());
+    }
+
+    public static Map<String, Object> getProcessInstanceFormVariable(BpmProcessDefinitionInfoDO processDefinitionInfo,
+                                                                     Map<String, Object> processVariables) {
+        Map<String, Object> filteredVariables = new LinkedHashMap<>();
+        if (processVariables == null) {
+            return filteredVariables;
+        }
+        Map<String, BpmFormFieldVO> formFieldsMap = parseFormFields(processDefinitionInfo);
+        if (MapUtil.isEmpty(formFieldsMap)) {
+            return filteredVariables;
+        }
+        formFieldsMap.keySet().forEach(field -> {
+            if (processVariables.containsKey(field)) {
+                filteredVariables.put(field, processVariables.get(field));
+            }
+        });
+        return filteredVariables;
+    }
+
+    public static Map<String, BpmFormFieldVO> parseFormFields(BpmProcessDefinitionInfoDO processDefinitionInfo) {
+        Map<String, BpmFormFieldVO> formFieldsMap = new LinkedHashMap<>();
+        if (ObjectUtil.isNull(processDefinitionInfo)
+                || !BpmModelFormTypeEnum.NORMAL.getType().equals(processDefinitionInfo.getFormType())
+                || processDefinitionInfo.getFormFields() == null) {
+            return formFieldsMap;
+        }
+        processDefinitionInfo.getFormFields().forEach(formFieldStr -> {
+            JsonNode formFieldNode = JsonUtils.parseObject(formFieldStr, JsonNode.class);
+            parseFormField(formFieldNode, formFieldsMap);
+        });
+        return formFieldsMap;
     }
 
     /**

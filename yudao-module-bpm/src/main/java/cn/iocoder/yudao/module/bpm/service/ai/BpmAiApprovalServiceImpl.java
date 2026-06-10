@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
 import cn.iocoder.yudao.module.bpm.controller.admin.definition.vo.model.simple.BpmSimpleModelNodeVO;
 import cn.iocoder.yudao.module.bpm.controller.admin.task.vo.task.BpmTaskApproveReqVO;
 import cn.iocoder.yudao.module.bpm.controller.admin.task.vo.task.BpmTaskRejectReqVO;
+import cn.iocoder.yudao.module.bpm.dal.dataobject.definition.BpmProcessDefinitionInfoDO;
 import cn.iocoder.yudao.module.bpm.dal.dataobject.task.BpmAiApprovalCallbackLogDO;
 import cn.iocoder.yudao.module.bpm.dal.dataobject.task.BpmAiApprovalTaskDO;
 import cn.iocoder.yudao.module.bpm.dal.mysql.task.BpmAiApprovalCallbackLogMapper;
@@ -15,10 +16,12 @@ import cn.iocoder.yudao.module.bpm.framework.ai.config.BpmAiApprovalProperties;
 import cn.iocoder.yudao.module.bpm.framework.flowable.core.enums.BpmnVariableConstants;
 import cn.iocoder.yudao.module.bpm.framework.flowable.core.util.BpmnModelUtils;
 import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
+import cn.iocoder.yudao.module.bpm.framework.flowable.core.util.FlowableUtils;
 import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalBusinessResultReqDTO;
 import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalCallbackReqDTO;
 import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalSubmitReqDTO;
 import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalSubmitRespDTO;
+import cn.iocoder.yudao.module.bpm.service.definition.BpmProcessDefinitionService;
 import cn.iocoder.yudao.module.bpm.service.task.BpmTaskService;
 import lombok.extern.slf4j.Slf4j;
 import org.flowable.bpmn.model.FlowElement;
@@ -32,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -54,6 +58,8 @@ public class BpmAiApprovalServiceImpl implements BpmAiApprovalService {
     private BpmAiApprovalProperties properties;
     @Resource
     private BpmAiApprovalDecisionPolicy decisionPolicy;
+    @Resource
+    private BpmProcessDefinitionService processDefinitionService;
     @Resource
     @Lazy
     private BpmTaskService taskService;
@@ -201,12 +207,29 @@ public class BpmAiApprovalServiceImpl implements BpmAiApprovalService {
         return true;
     }
 
+    @Override
+    public int syncPendingTaskResultsFromGuanlan(int batchSize) {
+        List<BpmAiApprovalTaskDO> approvalTasks = aiApprovalTaskMapper.selectPendingPollingTasks(batchSize);
+        int syncedCount = 0;
+        for (BpmAiApprovalTaskDO approvalTask : approvalTasks) {
+            try {
+                if (syncTaskResultFromGuanlan(approvalTask.getTaskId())) {
+                    syncedCount++;
+                }
+            } catch (Exception ex) {
+                log.warn("[syncPendingTaskResultsFromGuanlan][taskId({}) guanlanTaskId({}) 查询观澜结果失败]",
+                        approvalTask.getTaskId(), approvalTask.getGuanlanTaskId(), ex);
+            }
+        }
+        return syncedCount;
+    }
+
     private BpmAiApprovalSubmitReqDTO buildSubmitReqDTO(ProcessInstance processInstance, Task task, String externalId) {
         Map<String, Object> document = new HashMap<>();
         document.put("processInstanceId", processInstance.getId());
         document.put("processDefinitionId", processInstance.getProcessDefinitionId());
         document.put("businessKey", processInstance.getBusinessKey());
-        document.put("processVariables", processInstance.getProcessVariables());
+        document.put("formVariables", buildFormVariables(processInstance));
         document.put("taskId", task.getId());
         document.put("taskDefinitionKey", task.getTaskDefinitionKey());
         document.put("taskName", task.getName());
@@ -221,6 +244,12 @@ public class BpmAiApprovalServiceImpl implements BpmAiApprovalService {
                 .setTaskName(task.getName())
                 .setAssigneeUserId(parseAssignee(task))
                 .setDocument(document);
+    }
+
+    private Map<String, Object> buildFormVariables(ProcessInstance processInstance) {
+        BpmProcessDefinitionInfoDO processDefinitionInfo = processDefinitionService.getProcessDefinitionInfo(
+                processInstance.getProcessDefinitionId());
+        return FlowableUtils.getProcessInstanceFormVariable(processDefinitionInfo, processInstance.getProcessVariables());
     }
 
     private BpmGuanlanApprovalClient.Config buildConfig(BpmSimpleModelNodeVO.AiApprovalSetting setting) {

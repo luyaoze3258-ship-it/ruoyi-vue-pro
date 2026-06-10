@@ -265,6 +265,9 @@ yudao:
           signature-header: X-Approval-Signature
           callback-id-header: X-Callback-Id
           test-mode-header: X-Approval-Test-Mode
+      polling:
+        enabled: false
+        batch-size: 20
 
 --- #################### 芋道相关配置 ####################
 

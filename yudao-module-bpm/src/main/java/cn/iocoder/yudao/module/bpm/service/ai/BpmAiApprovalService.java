@@ -31,4 +31,12 @@ public interface BpmAiApprovalService {
      */
     boolean syncTaskResultFromGuanlan(String taskId);
 
+    /**
+     * 批量查询未完成的观澜任务结果，并在任务完成后应用 AI 结论。
+     *
+     * @param batchSize 每次查询的最大任务数量
+     * @return 已同步完成结果的任务数量
+     */
+    int syncPendingTaskResultsFromGuanlan(int batchSize);
+
 }

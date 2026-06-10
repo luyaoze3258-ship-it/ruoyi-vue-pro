@@ -94,3 +94,12 @@ CREATE TABLE IF NOT EXISTS `bpm_ai_approval_callback_log` (
   KEY `idx_bpm_ai_callback_tenant_guanlan` (`tenant_id`, `guanlan_task_id`) USING BTREE,
   KEY `idx_bpm_ai_callback_tenant_external` (`tenant_id`, `external_id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'BPM AI 审批回调日志';
+
+INSERT INTO `infra_job` (`name`, `status`, `handler_name`, `handler_param`, `cron_expression`,
+                         `retry_count`, `retry_interval`, `monitor_timeout`, `creator`, `create_time`, `updater`,
+                         `update_time`, `deleted`)
+SELECT 'BPM AI 审批观澜结果同步 Job', 1, 'bpmAiApprovalPollingJob', '', '0 */1 * * * ?', 0, 0, 0,
+       '1', NOW(), '1', NOW(), b'0'
+WHERE NOT EXISTS (
+    SELECT 1 FROM `infra_job` WHERE `handler_name` = 'bpmAiApprovalPollingJob' AND `deleted` = b'0'
+);

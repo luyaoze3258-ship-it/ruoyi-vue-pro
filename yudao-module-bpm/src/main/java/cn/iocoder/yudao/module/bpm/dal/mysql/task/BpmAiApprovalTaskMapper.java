@@ -5,6 +5,8 @@ import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.bpm.dal.dataobject.task.BpmAiApprovalTaskDO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.List;
+
 @Mapper
 public interface BpmAiApprovalTaskMapper extends BaseMapperX<BpmAiApprovalTaskDO> {
 
@@ -32,6 +34,14 @@ public interface BpmAiApprovalTaskMapper extends BaseMapperX<BpmAiApprovalTaskDO
         return selectLastOne(new LambdaQueryWrapperX<BpmAiApprovalTaskDO>()
                 .eq(BpmAiApprovalTaskDO::getProcessInstanceId, processInstanceId)
                 .orderByDesc(BpmAiApprovalTaskDO::getId));
+    }
+
+    default List<BpmAiApprovalTaskDO> selectPendingPollingTasks(int limit) {
+        return selectList(new LambdaQueryWrapperX<BpmAiApprovalTaskDO>()
+                .isNotNull(BpmAiApprovalTaskDO::getGuanlanTaskId)
+                .isNull(BpmAiApprovalTaskDO::getVerdict)
+                .orderByAsc(BpmAiApprovalTaskDO::getId)
+                .last("LIMIT " + limit));
     }
 
 }
