@@ -210,13 +210,29 @@ function shouldShowCustomUserSelect(
 }
 
 /** 判断是否需要显示审批意见 */
-function shouldShowApprovalReason(task: any, nodeType: BpmNodeTypeEnum) {
+function shouldShowApprovalReason(
+  activity: BpmProcessInstanceApi.ApprovalNodeInfo,
+  task: any,
+) {
+  if (isAiApprovalNode(activity)) {
+    return !!activity.aiApproval?.conclusion;
+  }
   return (
     task.reason &&
     [BpmNodeTypeEnum.END_EVENT_NODE, BpmNodeTypeEnum.USER_TASK_NODE].includes(
-      nodeType,
+      activity.nodeType,
     )
   );
+}
+
+function getApprovalReasonText(
+  activity: BpmProcessInstanceApi.ApprovalNodeInfo,
+  task: any,
+) {
+  if (isAiApprovalNode(activity)) {
+    return activity.aiApproval?.conclusion || '';
+  }
+  return task.reason;
 }
 
 /** 用户选择弹窗关闭 */
@@ -438,10 +454,10 @@ defineExpose({ setCustomApproveUsers, batchSetCustomApproveUsers });
               <!-- 审批意见和签名 -->
               <teleport defer :to="`#activity-task-${activity.id}-${index}`">
                 <div
-                  v-if="shouldShowApprovalReason(task, activity.nodeType)"
+                  v-if="shouldShowApprovalReason(activity, task)"
                   class="mt-1 w-full rounded-md bg-gray-100 p-2 text-sm text-gray-500"
                 >
-                  审批意见：{{ task.reason }}
+                  审批意见：{{ getApprovalReasonText(activity, task) }}
                 </div>
                 <div
                   v-if="
