@@ -6,6 +6,7 @@ import type { PageParam, PageResult } from '@vben/request';
 
 import type { BpmTaskApi } from '../task';
 
+import type { BpmAiApprovalApi } from '#/api/bpm/aiApproval';
 import type { BpmModelApi } from '#/api/bpm/model';
 
 import { requestClient } from '#/api/request';
@@ -72,6 +73,7 @@ export namespace BpmProcessInstanceApi {
     startTime?: Date;
     status: number;
     processInstanceId?: string;
+    aiApproval?: BpmAiApprovalApi.Detail;
     tasks: ApprovalTaskInfo[];
   }
 

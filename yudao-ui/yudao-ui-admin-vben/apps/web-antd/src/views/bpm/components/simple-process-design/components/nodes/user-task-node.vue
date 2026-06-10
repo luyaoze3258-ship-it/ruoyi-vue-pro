@@ -3,7 +3,7 @@ import type { Ref } from 'vue';
 
 import type { SimpleFlowNode } from '../../consts';
 
-import { inject, ref } from 'vue';
+import { computed, inject, ref } from 'vue';
 
 import { useVbenModal } from '@vben/common-ui';
 import { BpmNodeTypeEnum } from '@vben/constants';
@@ -43,6 +43,9 @@ const { showInput, changeNodeName, clickTitle, inputRef } = useNodeName2(
   BpmNodeTypeEnum.USER_TASK_NODE,
 );
 const nodeSetting = ref();
+const isAiApprovalNode = computed(
+  () => currentNode.value.aiApprovalSetting?.enable === true,
+);
 
 const [Modal, modalApi] = useVbenModal({
   connectedComponent: TaskListModal,
@@ -91,9 +94,15 @@ function findReturnTaskNodes(
       >
         <div class="node-title-container">
           <div
-            :class="`node-title-icon ${currentNode.type === BpmNodeTypeEnum.TRANSACTOR_NODE ? 'transactor-task' : 'user-task'}`"
+            :class="`node-title-icon ${isAiApprovalNode ? 'ai-approval-task' : currentNode.type === BpmNodeTypeEnum.TRANSACTOR_NODE ? 'transactor-task' : 'user-task'}`"
           >
+            <IconifyIcon
+              v-if="isAiApprovalNode"
+              icon="lucide:bot"
+              class="text-base"
+            />
             <span
+              v-else
               :class="`iconfont ${currentNode.type === BpmNodeTypeEnum.TRANSACTOR_NODE ? 'icon-transactor' : 'icon-approve'}`"
             >
             </span>

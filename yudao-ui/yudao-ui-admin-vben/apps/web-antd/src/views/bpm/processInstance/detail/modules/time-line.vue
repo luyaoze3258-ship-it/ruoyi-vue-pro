@@ -33,6 +33,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
+  openAiAssistant: [activity: BpmProcessInstanceApi.ApprovalNodeInfo];
   selectUserConfirm: [activityId: string, userList: any[]];
 }>();
 
@@ -98,8 +99,22 @@ const nodeTypeSvgMap = {
 const onlyStatusIconShow = [-1, 0, 1]; // 只有状态是 -1、0、1 才展示头像右小角状态小 icon
 
 /** 获取审批节点类型图标 */
-function getApprovalNodeTypeIcon(nodeType: BpmNodeTypeEnum) {
+function getApprovalNodeTypeIcon(activity: BpmProcessInstanceApi.ApprovalNodeInfo) {
+  if (isAiApprovalNode(activity)) {
+    return 'lucide:bot';
+  }
+  const nodeType = activity.nodeType;
   return nodeTypeSvgMap[nodeType]?.icon;
+}
+
+function isAiApprovalNode(activity: BpmProcessInstanceApi.ApprovalNodeInfo) {
+  return !!activity.aiApproval;
+}
+
+function handleAiAssistant(activity: BpmProcessInstanceApi.ApprovalNodeInfo) {
+  if (isAiApprovalNode(activity)) {
+    emit('openAiAssistant', activity);
+  }
 }
 
 /** 获取审批节点图标 */
@@ -242,9 +257,14 @@ defineExpose({ setCustomApproveUsers, batchSetCustomApproveUsers });
           <div class="relative">
             <div
               class="position-absolute left--2.5 top--1.5 flex h-8 w-8 items-center justify-center rounded-full border border-solid border-gray-200 bg-blue-500 p-1.5"
+              :class="{
+                'cursor-pointer !border-blue-300 !bg-blue-600 shadow-sm':
+                  isAiApprovalNode(activity),
+              }"
+              @click="handleAiAssistant(activity)"
             >
               <IconifyIcon
-                :icon="getApprovalNodeTypeIcon(activity.nodeType)"
+                :icon="getApprovalNodeTypeIcon(activity)"
                 class="size-6 text-white"
               />
             </div>
@@ -272,6 +292,15 @@ defineExpose({ setCustomApproveUsers, batchSetCustomApproveUsers });
           <div class="flex w-full">
             <div class="font-bold">
               {{ activity.name }}
+              <Button
+                v-if="isAiApprovalNode(activity)"
+                type="link"
+                size="small"
+                class="ml-1 px-1"
+                @click="handleAiAssistant(activity)"
+              >
+                AI助手
+              </Button>
               <span v-if="activity.status === BpmTaskStatusEnum.SKIP">
                 【跳过】
               </span>

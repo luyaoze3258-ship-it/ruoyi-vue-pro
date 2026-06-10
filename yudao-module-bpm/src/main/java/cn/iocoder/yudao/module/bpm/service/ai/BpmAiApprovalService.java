@@ -1,6 +1,8 @@
 package cn.iocoder.yudao.module.bpm.service.ai;
 
 import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalCallbackReqDTO;
+import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalChatRespDTO;
+import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalDetailRespDTO;
 import org.flowable.bpmn.model.FlowElement;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.task.api.Task;
@@ -38,5 +40,15 @@ public interface BpmAiApprovalService {
      * @return 已同步完成结果的任务数量
      */
     int syncPendingTaskResultsFromGuanlan(int batchSize);
+
+    /**
+     * 获得流程实例最近一次 AI 审批详情。
+     */
+    BpmAiApprovalDetailRespDTO getLatestDetail(String processInstanceId);
+
+    /**
+     * 围绕当前单据和 AI 审批结果进行问答。
+     */
+    BpmAiApprovalChatRespDTO chat(String processInstanceId, String question);
 
 }

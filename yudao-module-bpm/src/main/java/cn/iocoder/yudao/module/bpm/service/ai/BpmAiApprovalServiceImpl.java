@@ -19,12 +19,16 @@ import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import cn.iocoder.yudao.module.bpm.framework.flowable.core.util.FlowableUtils;
 import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalBusinessResultReqDTO;
 import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalCallbackReqDTO;
+import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalChatRespDTO;
+import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalDetailRespDTO;
 import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalSubmitReqDTO;
 import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalSubmitRespDTO;
 import cn.iocoder.yudao.module.bpm.service.definition.BpmProcessDefinitionService;
 import cn.iocoder.yudao.module.bpm.service.task.BpmTaskService;
 import lombok.extern.slf4j.Slf4j;
 import org.flowable.bpmn.model.FlowElement;
+import org.flowable.engine.HistoryService;
+import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.task.api.Task;
 import org.springframework.context.annotation.Lazy;
@@ -63,6 +67,8 @@ public class BpmAiApprovalServiceImpl implements BpmAiApprovalService {
     @Resource
     @Lazy
     private BpmTaskService taskService;
+    @Resource
+    private HistoryService historyService;
     @Resource
     private org.flowable.engine.TaskService flowableTaskService;
 
@@ -224,6 +230,44 @@ public class BpmAiApprovalServiceImpl implements BpmAiApprovalService {
         return syncedCount;
     }
 
+    @Override
+    public BpmAiApprovalDetailRespDTO getLatestDetail(String processInstanceId) {
+        BpmAiApprovalTaskDO approvalTask = aiApprovalTaskMapper.selectLatestByProcessInstanceId(processInstanceId);
+        if (approvalTask == null) {
+            return null;
+        }
+        return buildDetailRespDTO(approvalTask);
+    }
+
+    @Override
+    public BpmAiApprovalChatRespDTO chat(String processInstanceId, String question) {
+        BpmAiApprovalTaskDO approvalTask = aiApprovalTaskMapper.selectLatestByProcessInstanceId(processInstanceId);
+        if (approvalTask == null) {
+            return new BpmAiApprovalChatRespDTO()
+                    .setSource("local")
+                    .setAnswer("当前单据还没有 AI 审批记录。");
+        }
+        try {
+            BpmGuanlanApprovalClient.ChatResult chatResult = guanlanApprovalClient.chat(question,
+                    buildChatContext(approvalTask), buildConfig(approvalTask));
+            if (chatResult != null && StrUtil.isNotBlank(chatResult.getAnswer())) {
+                return new BpmAiApprovalChatRespDTO()
+                        .setSource("guanlan")
+                        .setAnswer(chatResult.getAnswer());
+            }
+        } catch (Exception ex) {
+            log.warn("[chat][processInstanceId({}) taskId({}) 调用观澜对话失败，降级本地解释]",
+                    processInstanceId, approvalTask.getTaskId(), ex);
+        }
+        String answer = "你问的是：" + question + "\n"
+                + buildShortConclusion(approvalTask.getVerdict()) + "\n"
+                + "智能体：" + StrUtil.blankToDefault(approvalTask.getGuanlanAgentName(), "未配置") + "\n"
+                + "分析依据：" + StrUtil.blankToDefault(approvalTask.getOpinion(), "观澜暂未返回完整分析。");
+        return new BpmAiApprovalChatRespDTO()
+                .setSource("local")
+                .setAnswer(answer);
+    }
+
     private BpmAiApprovalSubmitReqDTO buildSubmitReqDTO(ProcessInstance processInstance, Task task, String externalId) {
         Map<String, Object> document = new HashMap<>();
         document.put("processInstanceId", processInstance.getId());
@@ -345,9 +389,70 @@ public class BpmAiApprovalServiceImpl implements BpmAiApprovalService {
     }
 
     private static String buildAiReason(BpmAiApprovalCallbackReqDTO callbackReqDTO) {
-        String opinion = StrUtil.blankToDefault(callbackReqDTO.getOpinion(), "");
-        return StrUtil.isBlank(opinion) ? "AI 审批结论：" + callbackReqDTO.getVerdict()
-                : "AI 审批结论：" + callbackReqDTO.getVerdict() + "；" + opinion;
+        return buildShortConclusion(callbackReqDTO.getVerdict());
+    }
+
+    private static BpmAiApprovalDetailRespDTO buildDetailRespDTO(BpmAiApprovalTaskDO approvalTask) {
+        return new BpmAiApprovalDetailRespDTO()
+                .setProcessInstanceId(approvalTask.getProcessInstanceId())
+                .setTaskId(approvalTask.getTaskId())
+                .setTaskDefinitionKey(approvalTask.getTaskDefinitionKey())
+                .setTaskName(approvalTask.getTaskName())
+                .setGuanlanTaskId(approvalTask.getGuanlanTaskId())
+                .setAgentName(approvalTask.getGuanlanAgentName())
+                .setVerdict(approvalTask.getVerdict())
+                .setConclusion(buildShortConclusion(approvalTask.getVerdict()))
+                .setOpinion(approvalTask.getOpinion())
+                .setAdoptEnabled(approvalTask.getAdoptEnabled())
+                .setStatus(approvalTask.getStatus())
+                .setCallbackTime(approvalTask.getCallbackTime());
+    }
+
+    private Map<String, Object> buildChatContext(BpmAiApprovalTaskDO approvalTask) {
+        Map<String, Object> context = new HashMap<>();
+        context.put("processInstanceId", approvalTask.getProcessInstanceId());
+        context.put("processDefinitionId", approvalTask.getProcessDefinitionId());
+        context.put("taskId", approvalTask.getTaskId());
+        context.put("taskDefinitionKey", approvalTask.getTaskDefinitionKey());
+        context.put("taskName", approvalTask.getTaskName());
+        context.put("guanlanTaskId", approvalTask.getGuanlanTaskId());
+        context.put("agentName", approvalTask.getGuanlanAgentName());
+        context.put("verdict", approvalTask.getVerdict());
+        context.put("conclusion", buildShortConclusion(approvalTask.getVerdict()));
+        context.put("opinion", approvalTask.getOpinion());
+        context.put("adoptEnabled", approvalTask.getAdoptEnabled());
+        context.put("formVariables", getChatFormVariables(approvalTask));
+        return context;
+    }
+
+    private Map<String, Object> getChatFormVariables(BpmAiApprovalTaskDO approvalTask) {
+        if (StrUtil.isBlank(approvalTask.getProcessInstanceId())
+                || StrUtil.isBlank(approvalTask.getProcessDefinitionId())) {
+            return Map.of();
+        }
+        HistoricProcessInstance processInstance = historyService.createHistoricProcessInstanceQuery()
+                .processInstanceId(approvalTask.getProcessInstanceId())
+                .includeProcessVariables()
+                .singleResult();
+        if (processInstance == null) {
+            return Map.of();
+        }
+        BpmProcessDefinitionInfoDO processDefinitionInfo = processDefinitionService.getProcessDefinitionInfo(
+                approvalTask.getProcessDefinitionId());
+        return FlowableUtils.getProcessInstanceFormVariable(processDefinitionInfo, processInstance.getProcessVariables());
+    }
+
+    static String buildShortConclusion(String verdict) {
+        if (StrUtil.equalsIgnoreCase(verdict, "green")) {
+            return "AI结论：建议通过";
+        }
+        if (StrUtil.equalsIgnoreCase(verdict, "red")) {
+            return "AI结论：建议驳回";
+        }
+        if (StrUtil.equalsIgnoreCase(verdict, "yellow")) {
+            return "AI结论：需人工复核";
+        }
+        return StrUtil.isBlank(verdict) ? "AI结论：等待结果" : "AI结论：" + verdict;
     }
 
 }

@@ -9,6 +9,9 @@ import cn.iocoder.yudao.module.bpm.framework.ai.config.BpmAiApprovalProperties;
 import cn.iocoder.yudao.module.bpm.service.ai.BpmAiApprovalCallbackVerifier;
 import cn.iocoder.yudao.module.bpm.service.ai.BpmAiApprovalService;
 import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalCallbackReqDTO;
+import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalChatReqDTO;
+import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalChatRespDTO;
+import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalDetailRespDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.annotation.security.PermitAll;
+import javax.validation.Valid;
 import javax.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 
@@ -58,6 +62,22 @@ public class BpmAiApprovalController {
     @PreAuthorize("@ss.hasPermission('bpm:task:update')")
     public CommonResult<Boolean> syncGuanlanTaskResult(@RequestParam("taskId") String taskId) {
         return success(aiApprovalService.syncTaskResultFromGuanlan(taskId));
+    }
+
+    @GetMapping("/detail")
+    @Operation(summary = "获得流程实例 AI 审批详情")
+    @Parameter(name = "processInstanceId", description = "流程实例编号", required = true)
+    @PreAuthorize("@ss.hasPermission('bpm:process-instance:query')")
+    public CommonResult<BpmAiApprovalDetailRespDTO> getLatestDetail(
+            @RequestParam("processInstanceId") String processInstanceId) {
+        return success(aiApprovalService.getLatestDetail(processInstanceId));
+    }
+
+    @PostMapping("/chat")
+    @Operation(summary = "当前单据 AI 审批助手对话")
+    @PreAuthorize("@ss.hasPermission('bpm:process-instance:query')")
+    public CommonResult<BpmAiApprovalChatRespDTO> chat(@Valid @RequestBody BpmAiApprovalChatReqDTO reqDTO) {
+        return success(aiApprovalService.chat(reqDTO.getProcessInstanceId(), reqDTO.getQuestion()));
     }
 
 }

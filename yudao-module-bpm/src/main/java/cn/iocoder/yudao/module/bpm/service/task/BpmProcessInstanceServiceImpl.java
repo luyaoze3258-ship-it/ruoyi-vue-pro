@@ -38,6 +38,8 @@ import cn.iocoder.yudao.module.bpm.framework.flowable.core.util.BpmnModelUtils;
 import cn.iocoder.yudao.module.bpm.framework.flowable.core.util.FlowableUtils;
 import cn.iocoder.yudao.module.bpm.framework.flowable.core.util.SimpleModelUtils;
 import cn.iocoder.yudao.module.bpm.service.definition.BpmProcessDefinitionService;
+import cn.iocoder.yudao.module.bpm.service.ai.BpmAiApprovalService;
+import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalDetailRespDTO;
 import cn.iocoder.yudao.module.bpm.service.message.BpmMessageService;
 import cn.iocoder.yudao.module.system.api.dept.DeptApi;
 import cn.iocoder.yudao.module.system.api.dept.dto.DeptRespDTO;
@@ -122,6 +124,8 @@ public class BpmProcessInstanceServiceImpl implements BpmProcessInstanceService 
 
     @Resource
     private BpmProcessIdRedisDAO processIdRedisDAO;
+    @Resource
+    private BpmAiApprovalService aiApprovalService;
 
     // ========== Query 查询相关方法 ==========
 
@@ -387,6 +391,14 @@ public class BpmProcessInstanceServiceImpl implements BpmProcessInstanceService 
         // 2. 表单权限
         String taskId = reqVO.getTaskId() == null && todoTask != null ? todoTask.getId() : reqVO.getTaskId();
         Map<String, String> formFieldsPermission = getFormFieldsPermission(bpmnModel, reqVO.getActivityId(), taskId);
+
+        BpmAiApprovalDetailRespDTO aiApprovalDetail = aiApprovalService.getLatestDetail(processInstance.getId());
+        if (aiApprovalDetail != null) {
+            approveNodes.stream()
+                    .filter(node -> StrUtil.equals(node.getId(), aiApprovalDetail.getTaskDefinitionKey()))
+                    .findFirst()
+                    .ifPresent(node -> node.setAiApproval(aiApprovalDetail));
+        }
 
         // 3. 拼接数据
         return BpmProcessInstanceConvert.INSTANCE.buildApprovalDetail(bpmnModel, processDefinition,

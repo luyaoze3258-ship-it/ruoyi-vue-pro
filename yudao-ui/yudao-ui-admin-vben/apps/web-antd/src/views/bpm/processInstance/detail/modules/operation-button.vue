@@ -3,6 +3,7 @@
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 
+import type { BpmAiApprovalApi } from '#/api/bpm/aiApproval';
 import type { BpmProcessInstanceApi } from '#/api/bpm/processInstance';
 import type { SystemUserApi } from '#/api/system/user';
 
@@ -44,6 +45,7 @@ import {
   cancelProcessInstanceByStartUser,
   getNextApprovalNodes,
 } from '#/api/bpm/processInstance';
+import { getAiApprovalDetail } from '#/api/bpm/aiApproval';
 import {
   approveTask,
   copyTask,
@@ -53,6 +55,7 @@ import {
   returnTask,
   signCreateTask,
   signDeleteTask,
+  syncGuanlanAiApprovalTask,
   transferTask,
 } from '#/api/bpm/task';
 import { setConfAndFields2 } from '#/components/form-create';
@@ -121,6 +124,8 @@ const approveReasonForm: any = reactive({
   signPicUrl: '',
   nextAssignees: {},
 });
+const aiApprovalDetail = ref<BpmAiApprovalApi.Detail>();
+const aiSyncLoading = ref(false);
 const approveReasonRule: Record<string, any> = computed(() => {
   return {
     reason: [
@@ -627,6 +632,35 @@ function reload() {
   emit('success');
 }
 
+/** 加载当前流程的 AI 审批任务，用于保留人工同步兜底入口 */
+async function loadAiApprovalDetail() {
+  const processInstanceId = props.processInstance?.id;
+  if (!processInstanceId) {
+    aiApprovalDetail.value = undefined;
+    return;
+  }
+  aiApprovalDetail.value = await getAiApprovalDetail(processInstanceId);
+}
+
+/** 人工同步观澜 AI 审批结果 */
+async function handleSyncAiResult() {
+  if (!aiApprovalDetail.value?.taskId) {
+    message.warning('当前 AI 审批任务还未创建');
+    return;
+  }
+  aiSyncLoading.value = true;
+  try {
+    const synced = await syncGuanlanAiApprovalTask(
+      aiApprovalDetail.value.taskId,
+    );
+    await loadAiApprovalDetail();
+    message.success(synced ? 'AI 结果已同步' : '暂无新的 AI 结果');
+    reload();
+  } finally {
+    aiSyncLoading.value = false;
+  }
+}
+
 /** 任务是否为处理中状态 */
 function isHandleTaskStatus() {
   let canHandle = false;
@@ -677,6 +711,7 @@ function getButtonDisplayName(btnType: BpmTaskOperationButtonTypeEnum) {
 function loadTodoTask(task: any) {
   approveForm.value = {};
   runningTask.value = task;
+  void loadAiApprovalDetail();
   approveFormFApi.value = {};
   // 切换任务时重置请求序号与 pending 重算，避免旧任务飞行中的请求/Promise 串到新任务
   nextApprovalRequestId += 1;
@@ -709,6 +744,13 @@ function loadTodoTask(task: any) {
     approveForm.value = {}; // 占位，避免为空
   }
 }
+
+watch(
+  () => props.processInstance?.id,
+  () => {
+    void loadAiApprovalDetail();
+  },
+);
 
 /** 校验流程表单 */
 async function validateNormalForm() {
@@ -760,9 +802,20 @@ defineExpose({ loadTodoTask });
 </script>
 <template>
   <div class="flex items-center">
-    <!-- 【通过】按钮 -->
-    <!-- z-index 设置为300 避免覆盖签名弹窗 -->
+      <!-- 【通过】按钮 -->
+      <!-- z-index 设置为300 避免覆盖签名弹窗 -->
     <Space size="middle">
+      <Button
+        v-if="aiApprovalDetail?.taskId"
+        type="primary"
+        ghost
+        :loading="aiSyncLoading"
+        @click="handleSyncAiResult"
+      >
+        <IconifyIcon icon="lucide:rotate-cw" />
+        同步AI结果
+      </Button>
+
       <Popover
         v-model:open="popOverVisible.approve"
         placement="top"

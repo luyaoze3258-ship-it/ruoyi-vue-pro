@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.bpm.controller.admin.task.vo.instance;
 import cn.iocoder.yudao.module.bpm.controller.admin.base.user.UserSimpleBaseVO;
 import cn.iocoder.yudao.module.bpm.controller.admin.definition.vo.process.BpmProcessDefinitionRespVO;
 import cn.iocoder.yudao.module.bpm.controller.admin.task.vo.task.BpmTaskRespVO;
+import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalDetailRespDTO;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -74,6 +75,9 @@ public class BpmApprovalDetailRespVO {
 
         @Schema(description = "流程编号", example = "8761d8e0-0922-11f0-bd37-00ff1db677bf")
         private String processInstanceId; // 当且仅当，该节点是子流程节点时，才会有值（CallActivity 的 calledProcessInstanceId 字段）
+
+        @Schema(description = "AI 审批详情")
+        private BpmAiApprovalDetailRespDTO aiApproval;
 
     }
 

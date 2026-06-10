@@ -33,6 +33,7 @@ import { setConfAndFields2 } from '#/components/form-create';
 import { registerComponent } from '#/utils';
 
 import ProcessInstanceBpmnViewer from './modules/bpm-viewer.vue';
+import AiAssistantDrawer from './modules/ai-assistant-drawer.vue';
 import ProcessInstanceOperationButton from './modules/operation-button.vue';
 import ProcessssPrint from './modules/process-print.vue';
 import ProcessInstanceSimpleViewer from './modules/simple-bpm-viewer.vue';
@@ -68,6 +69,7 @@ const auditIconsMap: {
 };
 const activityNodes = ref<BpmProcessInstanceApi.ApprovalNodeInfo[]>([]); // 审批节点信息
 const userOptions = ref<SystemUserApi.User[]>([]); // 用户列表
+const aiAssistantOpen = ref(false);
 
 const fApi = ref<any>();
 const detailForm = ref({
@@ -187,6 +189,10 @@ const refresh = () => {
   // 重新获取详情
   getDetail();
 };
+
+function openAiAssistant() {
+  aiAssistantOpen.value = true;
+}
 
 const [PrintModal, printModalApi] = useVbenModal({
   connectedComponent: ProcessssPrint,
@@ -318,7 +324,10 @@ onMounted(async () => {
                 </Col>
                 <Col :xs="24" :sm="24" :md="6" :lg="6" :xl="8">
                   <div class="mt-4">
-                    <ProcessInstanceTimeline :activity-nodes="activityNodes" />
+                    <ProcessInstanceTimeline
+                      :activity-nodes="activityNodes"
+                      @open-ai-assistant="openAiAssistant"
+                    />
                   </div>
                 </Col>
               </Row>
@@ -378,6 +387,11 @@ onMounted(async () => {
     </Card>
     <!-- 打印对话框 -->
     <PrintModal />
+    <AiAssistantDrawer
+      v-model:open="aiAssistantOpen"
+      :process-instance-id="id"
+      @refreshed="refresh"
+    />
   </Page>
 </template>
 
