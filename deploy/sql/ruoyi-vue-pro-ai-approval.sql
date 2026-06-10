@@ -8,6 +8,9 @@ CREATE TABLE IF NOT EXISTS `bpm_ai_approval_task` (
   `assignee_user_id` bigint NULL DEFAULT NULL COMMENT '任务创建时审批人编号',
   `external_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '外部业务编号',
   `guanlan_task_id` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '观澜任务编号',
+  `guanlan_agent_name` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '观澜智能体名称',
+  `guanlan_base_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '观澜 API Base URL',
+  `guanlan_api_key` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '观澜 Agent API Key',
   `enabled` bit(1) NOT NULL DEFAULT b'1' COMMENT '是否启用 AI 审批',
   `adopt_enabled` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否采纳 AI 结论',
   `status` tinyint NOT NULL COMMENT '状态',
@@ -31,6 +34,42 @@ CREATE TABLE IF NOT EXISTS `bpm_ai_approval_task` (
   KEY `idx_bpm_ai_task_tenant_guanlan` (`tenant_id`, `guanlan_task_id`) USING BTREE,
   KEY `idx_bpm_ai_task_tenant_instance` (`tenant_id`, `process_instance_id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'BPM AI 审批任务';
+
+SET @column_exists := (
+  SELECT COUNT(1) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'bpm_ai_approval_task' AND COLUMN_NAME = 'guanlan_agent_name'
+);
+SET @ddl := IF(@column_exists = 0,
+  'ALTER TABLE `bpm_ai_approval_task` ADD COLUMN `guanlan_agent_name` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT ''观澜智能体名称'' AFTER `guanlan_task_id`',
+  'SELECT 1'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @column_exists := (
+  SELECT COUNT(1) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'bpm_ai_approval_task' AND COLUMN_NAME = 'guanlan_base_url'
+);
+SET @ddl := IF(@column_exists = 0,
+  'ALTER TABLE `bpm_ai_approval_task` ADD COLUMN `guanlan_base_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT ''观澜 API Base URL'' AFTER `guanlan_agent_name`',
+  'SELECT 1'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @column_exists := (
+  SELECT COUNT(1) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'bpm_ai_approval_task' AND COLUMN_NAME = 'guanlan_api_key'
+);
+SET @ddl := IF(@column_exists = 0,
+  'ALTER TABLE `bpm_ai_approval_task` ADD COLUMN `guanlan_api_key` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT ''观澜 Agent API Key'' AFTER `guanlan_base_url`',
+  'SELECT 1'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 CREATE TABLE IF NOT EXISTS `bpm_ai_approval_callback_log` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '编号',

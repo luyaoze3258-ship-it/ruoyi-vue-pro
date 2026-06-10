@@ -354,6 +354,9 @@ async function saveConfig() {
   currentNode.value.aiApprovalSetting = {
     enable: configForm.value.aiApprovalEnable,
     adoptResult: configForm.value.aiApprovalAdoptResult,
+    agentName: configForm.value.aiApprovalAgentName,
+    baseUrl: configForm.value.aiApprovalBaseUrl,
+    apiKey: configForm.value.aiApprovalApiKey,
   };
   // 设置表单权限
   currentNode.value.fieldsPermission = fieldsPermissionConfig.value;
@@ -473,6 +476,10 @@ function showUserTaskNodeConfig(node: SimpleFlowNode) {
   configForm.value.aiApprovalEnable = node.aiApprovalSetting?.enable ?? false;
   configForm.value.aiApprovalAdoptResult =
     node.aiApprovalSetting?.adoptResult ?? false;
+  configForm.value.aiApprovalAgentName =
+    node.aiApprovalSetting?.agentName ?? '';
+  configForm.value.aiApprovalBaseUrl = node.aiApprovalSetting?.baseUrl ?? '';
+  configForm.value.aiApprovalApiKey = node.aiApprovalSetting?.apiKey ?? '';
   // 9. 跳过表达式
   configForm.value.skipExpression = node?.skipExpression ?? '';
   drawerApi.open();
@@ -1156,6 +1163,43 @@ onMounted(() => {
                     v-model:checked="configForm.aiApprovalAdoptResult"
                     checked-children="是"
                     un-checked-children="否"
+                  />
+                </div>
+              </FormItem>
+              <FormItem
+                v-if="configForm.aiApprovalEnable"
+                name="aiApprovalAgentName"
+              >
+                <div class="flex items-center gap-4">
+                  <span class="w-24">观澜智能体</span>
+                  <Input
+                    v-model:value="configForm.aiApprovalAgentName"
+                    placeholder="例如：费用审核智能体"
+                  />
+                </div>
+              </FormItem>
+              <FormItem
+                v-if="configForm.aiApprovalEnable"
+                name="aiApprovalBaseUrl"
+              >
+                <div class="flex items-center gap-4">
+                  <span class="w-24">BaseURL</span>
+                  <Input
+                    v-model:value="configForm.aiApprovalBaseUrl"
+                    placeholder="https://guanlan.guixucloud.com/"
+                  />
+                </div>
+              </FormItem>
+              <FormItem
+                v-if="configForm.aiApprovalEnable"
+                name="aiApprovalApiKey"
+              >
+                <div class="flex items-center gap-4">
+                  <span class="w-24">API Key</span>
+                  <Input
+                    v-model:value="configForm.aiApprovalApiKey"
+                    placeholder="sk-..."
+                    type="password"
                   />
                 </div>
               </FormItem>

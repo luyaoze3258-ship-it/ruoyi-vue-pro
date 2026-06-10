@@ -155,6 +155,9 @@ export function useFormFieldsAndStartUser() {
 
 export type UserTaskFormType = {
   aiApprovalAdoptResult: boolean;
+  aiApprovalAgentName?: string;
+  aiApprovalApiKey?: string;
+  aiApprovalBaseUrl?: string;
   aiApprovalEnable: boolean;
   approveMethod: ApproveMethodType;
   approveRatio?: number;
@@ -251,6 +254,9 @@ export function useNodeForm(nodeType: BpmNodeTypeEnum) {
       buttonsSetting: [],
       aiApprovalEnable: false,
       aiApprovalAdoptResult: false,
+      aiApprovalAgentName: '',
+      aiApprovalBaseUrl: '',
+      aiApprovalApiKey: '',
     };
   } else {
     configForm.value = {

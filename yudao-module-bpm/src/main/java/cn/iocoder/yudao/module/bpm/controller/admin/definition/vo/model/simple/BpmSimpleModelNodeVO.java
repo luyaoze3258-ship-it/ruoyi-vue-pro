@@ -228,6 +228,15 @@ public class BpmSimpleModelNodeVO {
         @Schema(description = "是否采纳 AI 结论", example = "false")
         @NotNull(message = "是否采纳 AI 结论不能为空")
         private Boolean adoptResult;
+
+        @Schema(description = "观澜智能体名称", example = "费用审核智能体")
+        private String agentName;
+
+        @Schema(description = "观澜 API Base URL", example = "https://guanlan.guixucloud.com/")
+        private String baseUrl;
+
+        @Schema(description = "观澜 Agent API Key", example = "sk-xxx")
+        private String apiKey;
     }
 
     @Schema(description = "空处理策略")

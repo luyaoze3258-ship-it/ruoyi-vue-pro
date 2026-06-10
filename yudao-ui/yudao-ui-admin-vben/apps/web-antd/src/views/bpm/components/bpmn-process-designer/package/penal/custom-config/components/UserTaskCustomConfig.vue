@@ -157,6 +157,9 @@ const reasonRequire = ref({ value: false });
 const aiApprovalSettingEl = ref<any>();
 const aiApprovalEnable = ref(false);
 const aiApprovalAdoptResult = ref(false);
+const aiApprovalAgentName = ref('');
+const aiApprovalBaseUrl = ref('');
+const aiApprovalApiKey = ref('');
 
 const elExtensionElements = ref<any>();
 const otherExtensions = ref<any>();
@@ -168,6 +171,9 @@ function parseAiApprovalSetting(value?: string) {
     return {
       enable: false,
       adoptResult: false,
+      agentName: '',
+      baseUrl: '',
+      apiKey: '',
     };
   }
   try {
@@ -175,11 +181,17 @@ function parseAiApprovalSetting(value?: string) {
     return {
       enable: Boolean(setting?.enable),
       adoptResult: Boolean(setting?.adoptResult),
+      agentName: setting?.agentName ?? '',
+      baseUrl: setting?.baseUrl ?? '',
+      apiKey: setting?.apiKey ?? '',
     };
   } catch {
     return {
       enable: false,
       adoptResult: false,
+      agentName: '',
+      baseUrl: '',
+      apiKey: '',
     };
   }
 }
@@ -188,6 +200,9 @@ function stringifyAiApprovalSetting() {
   return JSON.stringify({
     enable: aiApprovalEnable.value,
     adoptResult: aiApprovalAdoptResult.value,
+    agentName: aiApprovalAgentName.value,
+    baseUrl: aiApprovalBaseUrl.value,
+    apiKey: aiApprovalApiKey.value,
   });
 }
 
@@ -325,6 +340,9 @@ const resetCustomConfigList = () => {
   );
   aiApprovalEnable.value = aiApprovalSetting.enable;
   aiApprovalAdoptResult.value = aiApprovalSetting.adoptResult;
+  aiApprovalAgentName.value = aiApprovalSetting.agentName;
+  aiApprovalBaseUrl.value = aiApprovalSetting.baseUrl;
+  aiApprovalApiKey.value = aiApprovalSetting.apiKey;
   aiApprovalSettingEl.value.value = stringifyAiApprovalSetting();
 
   // 保留剩余扩展元素，便于后面更新该元素对应属性
@@ -384,6 +402,9 @@ const updateAssignEmptyUserIds = () => {
 const updateAiApprovalSetting = () => {
   if (!aiApprovalEnable.value) {
     aiApprovalAdoptResult.value = false;
+    aiApprovalAgentName.value = '';
+    aiApprovalBaseUrl.value = '';
+    aiApprovalApiKey.value = '';
   }
   aiApprovalSettingEl.value.value = stringifyAiApprovalSetting();
 
@@ -763,6 +784,39 @@ onMounted(async () => {
         v-model:checked="aiApprovalAdoptResult"
         checked-children="是"
         un-checked-children="否"
+        @change="updateAiApprovalSetting"
+      />
+    </Form.Item>
+    <Form.Item
+      v-if="aiApprovalEnable"
+      name="aiApprovalAgentName"
+      label="观澜智能体"
+    >
+      <Input
+        v-model:value="aiApprovalAgentName"
+        placeholder="例如：费用审核智能体"
+        @change="updateAiApprovalSetting"
+      />
+    </Form.Item>
+    <Form.Item
+      v-if="aiApprovalEnable"
+      name="aiApprovalBaseUrl"
+      label="观澜 BaseURL"
+    >
+      <Input
+        v-model:value="aiApprovalBaseUrl"
+        placeholder="https://guanlan.guixucloud.com/"
+        @change="updateAiApprovalSetting"
+      />
+    </Form.Item>
+    <Form.Item
+      v-if="aiApprovalEnable"
+      name="aiApprovalApiKey"
+      label="Agent API Key"
+    >
+      <Input.Password
+        v-model:value="aiApprovalApiKey"
+        placeholder="sk-..."
         @change="updateAiApprovalSetting"
       />
     </Form.Item>

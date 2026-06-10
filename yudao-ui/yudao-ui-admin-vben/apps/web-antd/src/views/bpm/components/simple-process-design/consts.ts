@@ -551,6 +551,9 @@ export type ChildProcessSetting = {
 
 export type AiApprovalSetting = {
   adoptResult: boolean;
+  agentName?: string;
+  apiKey?: string;
+  baseUrl?: string;
   enable: boolean;
 };
 

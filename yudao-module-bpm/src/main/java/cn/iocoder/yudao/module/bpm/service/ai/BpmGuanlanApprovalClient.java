@@ -28,10 +28,14 @@ public class BpmGuanlanApprovalClient {
     private BpmAiApprovalProperties properties;
 
     public BpmAiApprovalSubmitRespDTO submit(BpmAiApprovalSubmitReqDTO reqDTO) {
+        return submit(reqDTO, buildGlobalConfig());
+    }
+
+    public BpmAiApprovalSubmitRespDTO submit(BpmAiApprovalSubmitReqDTO reqDTO, Config config) {
         Map<String, Object> body = new HashMap<>();
         body.put("external_id", reqDTO.getExternalId());
         body.put("document", reqDTO.getDocument());
-        ResponseEntity<String> response = exchange("/api/v1/approval/submit", HttpMethod.POST, body,
+        ResponseEntity<String> response = exchange(config, "/api/v1/approval/submit", HttpMethod.POST, body,
                 reqDTO.getExternalId());
         GuanlanSubmitResponse submitResponse = JsonUtils.parseObject(response.getBody(), GuanlanSubmitResponse.class);
         BpmAiApprovalSubmitRespDTO result = new BpmAiApprovalSubmitRespDTO();
@@ -41,33 +45,52 @@ public class BpmGuanlanApprovalClient {
     }
 
     public String getTask(String taskId) {
-        return exchange("/api/v1/approval/tasks/" + taskId, HttpMethod.GET, null, null).getBody();
+        return exchange(buildGlobalConfig(), "/api/v1/approval/tasks/" + taskId, HttpMethod.GET, null, null).getBody();
     }
 
     public String getTaskByExternalId(String externalId) {
-        return exchange("/api/v1/approval/tasks/by-external-id/" + externalId, HttpMethod.GET, null, null).getBody();
+        return exchange(buildGlobalConfig(), "/api/v1/approval/tasks/by-external/" + externalId, HttpMethod.GET, null, null).getBody();
     }
 
     public void submitBusinessResult(String guanlanTaskId, BpmAiApprovalBusinessResultReqDTO reqDTO) {
-        exchange("/api/v1/approval/tasks/" + guanlanTaskId + "/business-result", HttpMethod.POST, reqDTO, null);
+        submitBusinessResult(guanlanTaskId, reqDTO, buildGlobalConfig());
     }
 
-    private ResponseEntity<String> exchange(String path, HttpMethod method, Object body, String idempotencyKey) {
-        String baseUrl = properties.getGuanlan().getBaseUrl();
+    public void submitBusinessResult(String guanlanTaskId, BpmAiApprovalBusinessResultReqDTO reqDTO, Config config) {
+        exchange(config, "/api/v1/approval/tasks/" + guanlanTaskId + "/business-result", HttpMethod.POST, reqDTO, null);
+    }
+
+    private ResponseEntity<String> exchange(Config config, String path, HttpMethod method, Object body, String idempotencyKey) {
+        String baseUrl = config.getBaseUrl();
         if (StrUtil.isBlank(baseUrl)) {
             throw new IllegalStateException("Guanlan baseUrl is blank");
         }
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(MediaType.parseMediaTypes(MediaType.APPLICATION_JSON_VALUE));
-        if (StrUtil.isNotBlank(properties.getGuanlan().getApiKey())) {
-            headers.add("X-API-Key", properties.getGuanlan().getApiKey());
+        if (StrUtil.isNotBlank(config.getApiKey())) {
+            headers.add("X-API-Key", config.getApiKey());
         }
         if (StrUtil.isNotBlank(idempotencyKey)) {
             headers.add("Idempotency-Key", idempotencyKey);
         }
         String url = StrUtil.removeSuffix(baseUrl, "/") + path;
         return restTemplate.exchange(url, method, new HttpEntity<>(body, headers), String.class);
+    }
+
+    private Config buildGlobalConfig() {
+        return new Config()
+                .setBaseUrl(properties.getGuanlan().getBaseUrl())
+                .setApiKey(properties.getGuanlan().getApiKey());
+    }
+
+    @Data
+    public static class Config {
+
+        private String baseUrl;
+
+        private String apiKey;
+
     }
 
     @Data

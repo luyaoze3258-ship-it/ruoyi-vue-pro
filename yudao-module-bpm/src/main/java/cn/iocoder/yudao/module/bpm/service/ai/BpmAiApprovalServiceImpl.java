@@ -79,6 +79,9 @@ public class BpmAiApprovalServiceImpl implements BpmAiApprovalService {
                 .taskName(task.getName())
                 .assigneeUserId(parseAssignee(task))
                 .externalId(externalId)
+                .guanlanAgentName(setting.getAgentName())
+                .guanlanBaseUrl(setting.getBaseUrl())
+                .guanlanApiKey(setting.getApiKey())
                 .enabled(true)
                 .adoptEnabled(BooleanUtil.isTrue(setting.getAdoptResult()))
                 .status(BpmAiApprovalStatusEnum.SUBMITTED.getStatus())
@@ -90,7 +93,7 @@ public class BpmAiApprovalServiceImpl implements BpmAiApprovalService {
         }
         try {
             BpmAiApprovalSubmitRespDTO submitRespDTO = guanlanApprovalClient.submit(buildSubmitReqDTO(processInstance,
-                    task, externalId));
+                    task, externalId), buildConfig(setting));
             BpmAiApprovalTaskDO updateObj = new BpmAiApprovalTaskDO();
             updateObj.setId(approvalTask.getId());
             updateObj.setGuanlanTaskId(submitRespDTO.getTaskId());
@@ -161,7 +164,8 @@ public class BpmAiApprovalServiceImpl implements BpmAiApprovalService {
                     .setFinalOpinion(finalOpinion)
                     .setProcessInstanceId(approvalTask.getProcessInstanceId())
                     .setTaskId(taskId);
-            guanlanApprovalClient.submitBusinessResult(approvalTask.getGuanlanTaskId(), reqDTO);
+            guanlanApprovalClient.submitBusinessResult(approvalTask.getGuanlanTaskId(), reqDTO,
+                    buildConfig(approvalTask));
         }
         BpmAiApprovalTaskDO updateObj = new BpmAiApprovalTaskDO();
         updateObj.setId(approvalTask.getId());
@@ -192,6 +196,18 @@ public class BpmAiApprovalServiceImpl implements BpmAiApprovalService {
                 .setTaskName(task.getName())
                 .setAssigneeUserId(parseAssignee(task))
                 .setDocument(document);
+    }
+
+    private BpmGuanlanApprovalClient.Config buildConfig(BpmSimpleModelNodeVO.AiApprovalSetting setting) {
+        return new BpmGuanlanApprovalClient.Config()
+                .setBaseUrl(StrUtil.blankToDefault(setting.getBaseUrl(), properties.getGuanlan().getBaseUrl()))
+                .setApiKey(StrUtil.blankToDefault(setting.getApiKey(), properties.getGuanlan().getApiKey()));
+    }
+
+    private BpmGuanlanApprovalClient.Config buildConfig(BpmAiApprovalTaskDO approvalTask) {
+        return new BpmGuanlanApprovalClient.Config()
+                .setBaseUrl(StrUtil.blankToDefault(approvalTask.getGuanlanBaseUrl(), properties.getGuanlan().getBaseUrl()))
+                .setApiKey(StrUtil.blankToDefault(approvalTask.getGuanlanApiKey(), properties.getGuanlan().getApiKey()));
     }
 
     private BpmAiApprovalTaskDO selectApprovalTaskForUpdate(BpmAiApprovalCallbackReqDTO callbackReqDTO) {

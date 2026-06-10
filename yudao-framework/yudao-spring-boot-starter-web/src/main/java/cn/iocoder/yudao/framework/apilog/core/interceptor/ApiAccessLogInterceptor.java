@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.iocoder.yudao.framework.apilog.core.filter.ApiAccessLogSanitizer;
 import cn.iocoder.yudao.framework.common.util.servlet.ServletUtils;
 import cn.iocoder.yudao.framework.common.util.spring.SpringUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +50,8 @@ public class ApiAccessLogInterceptor implements HandlerInterceptor {
                 log.info("[preHandle][开始请求 URL({}) 无参数]", request.getRequestURI());
             } else {
                 log.info("[preHandle][开始请求 URL({}) 参数({})]", request.getRequestURI(),
-                        StrUtil.blankToDefault(requestBody, queryString.toString()));
+                        StrUtil.blankToDefault(ApiAccessLogSanitizer.sanitizeJson(requestBody, null),
+                                ApiAccessLogSanitizer.sanitizeMap(queryString, null)));
             }
             // 计时
             StopWatch stopWatch = new StopWatch();

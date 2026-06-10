@@ -19,7 +19,10 @@ public class BpmAiApprovalSettingBpmnModelUtilsTest {
     @Test
     public void buildBpmnModel_shouldKeepAiApprovalSettingAfterXmlRoundTrip() {
         BpmSimpleModelNodeVO.AiApprovalSetting aiApprovalSetting = new BpmSimpleModelNodeVO.AiApprovalSetting()
-                .setEnable(true).setAdoptResult(true);
+                .setEnable(true).setAdoptResult(true)
+                .setAgentName("观澜费用审核")
+                .setBaseUrl("https://guanlan.guixucloud.com/")
+                .setApiKey("test-api-key");
         BpmSimpleModelNodeVO node = new BpmSimpleModelNodeVO()
                 .setId("Activity_ai")
                 .setType(BpmSimpleModelNodeTypeEnum.APPROVE_NODE.getType())
@@ -47,12 +50,18 @@ public class BpmAiApprovalSettingBpmnModelUtilsTest {
         assertNotNull(parsedSetting);
         assertTrue(parsedSetting.getEnable());
         assertTrue(parsedSetting.getAdoptResult());
+        assertEquals("观澜费用审核", parsedSetting.getAgentName());
+        assertEquals("https://guanlan.guixucloud.com/", parsedSetting.getBaseUrl());
+        assertEquals("test-api-key", parsedSetting.getApiKey());
     }
 
     @Test
     public void parseAiApprovalSetting_shouldSupportBpmnDesignerElementText() {
         BpmSimpleModelNodeVO.AiApprovalSetting aiApprovalSetting = new BpmSimpleModelNodeVO.AiApprovalSetting()
-                .setEnable(true).setAdoptResult(false);
+                .setEnable(true).setAdoptResult(false)
+                .setAgentName("观澜合同审核")
+                .setBaseUrl("https://guanlan.guixucloud.com/")
+                .setApiKey("designer-test-api-key");
         org.flowable.bpmn.model.UserTask userTask = new org.flowable.bpmn.model.UserTask();
 
         BpmnModelUtils.addAiApprovalSetting(aiApprovalSetting, userTask);
@@ -61,6 +70,9 @@ public class BpmAiApprovalSettingBpmnModelUtilsTest {
         assertNotNull(parsedSetting);
         assertTrue(parsedSetting.getEnable());
         assertFalse(parsedSetting.getAdoptResult());
+        assertEquals("观澜合同审核", parsedSetting.getAgentName());
+        assertEquals("https://guanlan.guixucloud.com/", parsedSetting.getBaseUrl());
+        assertEquals("designer-test-api-key", parsedSetting.getApiKey());
     }
 
 }

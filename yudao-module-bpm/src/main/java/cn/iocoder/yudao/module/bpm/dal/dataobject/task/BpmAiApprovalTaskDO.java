@@ -38,6 +38,12 @@ public class BpmAiApprovalTaskDO extends BaseDO {
 
     private String guanlanTaskId;
 
+    private String guanlanAgentName;
+
+    private String guanlanBaseUrl;
+
+    private String guanlanApiKey;
+
     private Boolean enabled;
 
     private Boolean adoptEnabled;
