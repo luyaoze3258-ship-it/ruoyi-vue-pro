@@ -84,6 +84,11 @@ public class BpmSimpleModelNodeVO {
      */
     private TimeoutHandler timeoutHandler;
 
+    /**
+     * AI 审批设置
+     */
+    private AiApprovalSetting aiApprovalSetting;
+
     @Schema(description = "审批节点的审批人与发起人相同时，对应的处理类型", example = "1")
     @InEnum(BpmUserTaskAssignStartUserHandlerTypeEnum.class)
     private Integer assignStartUserHandlerType;
@@ -209,6 +214,20 @@ public class BpmSimpleModelNodeVO {
 
         @Schema(description = "最大提醒次数", example = "1")
         private Integer maxRemindCount;
+    }
+
+    @Schema(description = "AI 审批设置")
+    @Data
+    @Valid
+    public static class AiApprovalSetting {
+
+        @Schema(description = "是否开启 AI 审批", example = "false")
+        @NotNull(message = "是否开启 AI 审批不能为空")
+        private Boolean enable;
+
+        @Schema(description = "是否采纳 AI 结论", example = "false")
+        @NotNull(message = "是否采纳 AI 结论不能为空")
+        private Boolean adoptResult;
     }
 
     @Schema(description = "空处理策略")

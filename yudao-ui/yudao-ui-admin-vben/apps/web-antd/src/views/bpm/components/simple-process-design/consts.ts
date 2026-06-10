@@ -549,6 +549,11 @@ export type ChildProcessSetting = {
   timeoutSetting: TimeoutSetting;
 };
 
+export type AiApprovalSetting = {
+  adoptResult: boolean;
+  enable: boolean;
+};
+
 /**
  *  节点结构定义
  */
@@ -563,6 +568,8 @@ export interface SimpleFlowNode {
   conditionNodes?: SimpleFlowNode[];
   // 审批类型
   approveType?: ApproveType;
+  // AI 审批设置
+  aiApprovalSetting?: AiApprovalSetting;
   // 候选人策略
   candidateStrategy?: number;
   // 候选人参数

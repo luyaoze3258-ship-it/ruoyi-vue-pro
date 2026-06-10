@@ -350,6 +350,11 @@ async function saveConfig() {
   // 设置审批人与发起人相同时
   currentNode.value.assignStartUserHandlerType =
     configForm.value.assignStartUserHandlerType;
+  // 设置 AI 审批
+  currentNode.value.aiApprovalSetting = {
+    enable: configForm.value.aiApprovalEnable,
+    adoptResult: configForm.value.aiApprovalAdoptResult,
+  };
   // 设置表单权限
   currentNode.value.fieldsPermission = fieldsPermissionConfig.value;
   // 设置按钮权限
@@ -464,7 +469,11 @@ function showUserTaskNodeConfig(node: SimpleFlowNode) {
   configForm.value.signEnable = node?.signEnable ?? false;
   // 7. 审批意见
   configForm.value.reasonRequire = node?.reasonRequire ?? false;
-  // 8. 跳过表达式
+  // 8. AI 审批
+  configForm.value.aiApprovalEnable = node.aiApprovalSetting?.enable ?? false;
+  configForm.value.aiApprovalAdoptResult =
+    node.aiApprovalSetting?.adoptResult ?? false;
+  // 9. 跳过表达式
   configForm.value.skipExpression = node?.skipExpression ?? '';
   drawerApi.open();
 }
@@ -1122,6 +1131,33 @@ onMounted(() => {
                     </Col>
                   </Row>
                 </RadioGroup>
+              </FormItem>
+            </div>
+
+            <div v-if="currentNode.type === BpmNodeTypeEnum.USER_TASK_NODE">
+              <Divider content-position="left">AI 审批</Divider>
+              <FormItem name="aiApprovalEnable">
+                <div class="flex items-center gap-4">
+                  <span class="w-24">启用 AI 审批</span>
+                  <Switch
+                    v-model:checked="configForm.aiApprovalEnable"
+                    checked-children="是"
+                    un-checked-children="否"
+                  />
+                </div>
+              </FormItem>
+              <FormItem
+                v-if="configForm.aiApprovalEnable"
+                name="aiApprovalAdoptResult"
+              >
+                <div class="flex items-center gap-4">
+                  <span class="w-24">采纳 AI 结论</span>
+                  <Switch
+                    v-model:checked="configForm.aiApprovalAdoptResult"
+                    checked-children="是"
+                    un-checked-children="否"
+                  />
+                </div>
               </FormItem>
             </div>
 

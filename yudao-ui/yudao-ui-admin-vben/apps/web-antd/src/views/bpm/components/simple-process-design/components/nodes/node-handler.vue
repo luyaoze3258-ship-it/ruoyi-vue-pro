@@ -63,6 +63,10 @@ function addNode(type: number) {
       showText: '',
       type,
       approveMethod: ApproveMethodType.SEQUENTIAL_APPROVE,
+      aiApprovalSetting: {
+        enable: false,
+        adoptResult: false,
+      },
       // 超时处理
       rejectHandler: {
         type: RejectHandlerType.FINISH_PROCESS,

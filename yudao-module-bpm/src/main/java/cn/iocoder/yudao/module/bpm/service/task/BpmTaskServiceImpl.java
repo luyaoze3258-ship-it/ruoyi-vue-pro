@@ -31,6 +31,7 @@ import cn.iocoder.yudao.module.bpm.framework.flowable.core.util.FlowableUtils;
 import cn.iocoder.yudao.module.bpm.service.definition.BpmFormService;
 import cn.iocoder.yudao.module.bpm.service.definition.BpmModelService;
 import cn.iocoder.yudao.module.bpm.service.definition.BpmProcessDefinitionService;
+import cn.iocoder.yudao.module.bpm.service.ai.BpmAiApprovalService;
 import cn.iocoder.yudao.module.bpm.service.message.BpmMessageService;
 import cn.iocoder.yudao.module.bpm.service.message.dto.BpmMessageSendWhenTaskTimeoutReqDTO;
 import cn.iocoder.yudao.module.system.api.dept.DeptApi;
@@ -102,6 +103,8 @@ public class BpmTaskServiceImpl implements BpmTaskService {
     private BpmMessageService messageService;
     @Resource
     private BpmFormService formService;
+    @Resource
+    private BpmAiApprovalService aiApprovalService;
 
     @Resource
     private AdminUserApi adminUserApi;
@@ -627,6 +630,7 @@ public class BpmTaskServiceImpl implements BpmTaskService {
 
         // 7. 调用 BPM complete 去完成任务
         taskService.complete(task.getId(), variables, true);
+        aiApprovalService.syncBusinessResultIfNecessary(task.getId(), "approved", reqVO.getReason());
 
         // 【加签专属】处理加签任务
         handleParentTaskIfSign(task.getParentTaskId());
@@ -844,6 +848,7 @@ public class BpmTaskServiceImpl implements BpmTaskService {
         // 3.2 情况二： 标记流程为不通过并结束流程
         processInstanceService.updateProcessInstanceReject(instance, reqVO.getReason()); // 标记不通过
         moveTaskToEnd(task.getProcessInstanceId(), BpmCommentTypeEnum.REJECT.formatComment(reqVO.getReason())); // 结束流程
+        aiApprovalService.syncBusinessResultIfNecessary(task.getId(), "rejected", reqVO.getReason());
     }
 
     /**
@@ -1434,14 +1439,14 @@ public class BpmTaskServiceImpl implements BpmTaskService {
         Task task = getTask(taskId);
         // 1. 可能只是活动，不是任务，所以查询不到
         if (task == null) {
-            log.error("[updateTaskStatusWhenCanceled][taskId({}) 任务不存在]", taskId);
+            log.debug("[updateTaskStatusWhenCanceled][taskId({}) 任务不存在]", taskId);
             return;
         }
 
         // 2. 更新 task 状态 + 原因
         Integer status = (Integer) task.getTaskLocalVariables().get(BpmnVariableConstants.TASK_VARIABLE_STATUS);
         if (BpmTaskStatusEnum.isEndStatus(status)) {
-            log.error("[updateTaskStatusWhenCanceled][taskId({}) 处于结果({})，无需进行更新]", taskId, status);
+            log.debug("[updateTaskStatusWhenCanceled][taskId({}) 处于结果({})，无需进行更新]", taskId, status);
             return;
         }
         updateTaskStatusAndReason(taskId, BpmTaskStatusEnum.CANCEL.getStatus(), BpmReasonEnum.CANCEL_BY_SYSTEM.getReason());
@@ -1526,6 +1531,7 @@ public class BpmTaskServiceImpl implements BpmTaskService {
                         return;
                     }
                     FlowElement userTaskElement = BpmnModelUtils.getFlowElementById(bpmnModel, task.getTaskDefinitionKey());
+                    aiApprovalService.submitTaskIfEnabled(processInstance, task, userTaskElement);
                     // 判断是否为退回或者驳回：如果是退回或者驳回不走这个策略
                     Boolean returnTaskFlag = runtimeService.getVariable(processInstance.getProcessInstanceId(),
                             String.format(BpmnVariableConstants.PROCESS_INSTANCE_VARIABLE_RETURN_FLAG, task.getTaskDefinitionKey()), Boolean.class);

@@ -462,6 +462,8 @@ public class SimpleModelUtils {
             addSignEnable(node.getSignEnable(), userTask);
             // 审批意见
             addReasonRequire(node.getReasonRequire(), userTask);
+            // AI 审批设置
+            addAiApprovalSetting(node.getAiApprovalSetting(), userTask);
             // 节点类型
             addNodeType(node.getType(), userTask);
             // 添加跳过表达式

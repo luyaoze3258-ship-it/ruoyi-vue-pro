@@ -154,6 +154,8 @@ export function useFormFieldsAndStartUser() {
 }
 
 export type UserTaskFormType = {
+  aiApprovalAdoptResult: boolean;
+  aiApprovalEnable: boolean;
   approveMethod: ApproveMethodType;
   approveRatio?: number;
   assignEmptyHandlerType?: AssignEmptyHandlerType;
@@ -247,11 +249,14 @@ export function useNodeForm(nodeType: BpmNodeTypeEnum) {
       timeDuration: 6, // 默认 6小时
       maxRemindCount: 1, // 默认 提醒 1次
       buttonsSetting: [],
+      aiApprovalEnable: false,
+      aiApprovalAdoptResult: false,
+    };
+  } else {
+    configForm.value = {
+      candidateStrategy: CandidateStrategy.USER,
     };
   }
-  configForm.value = {
-    candidateStrategy: CandidateStrategy.USER,
-  };
 
   function getShowText(): string {
     let showText = '';

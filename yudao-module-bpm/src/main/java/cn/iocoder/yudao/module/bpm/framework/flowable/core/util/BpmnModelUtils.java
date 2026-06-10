@@ -158,6 +158,15 @@ public class BpmnModelUtils {
         return NumberUtils.parseInt(parseExtensionElement(userTask, BpmnModelConstants.USER_TASK_APPROVE_TYPE));
     }
 
+    public static void addAiApprovalSetting(BpmSimpleModelNodeVO.AiApprovalSetting setting, FlowElement userTask) {
+        addExtensionElementJson(userTask, USER_TASK_AI_APPROVAL_SETTING, setting);
+    }
+
+    public static BpmSimpleModelNodeVO.AiApprovalSetting parseAiApprovalSetting(FlowElement userTask) {
+        return JsonUtils.parseObjectQuietly(parseExtensionElement(userTask, USER_TASK_AI_APPROVAL_SETTING),
+                BpmSimpleModelNodeVO.AiApprovalSetting.class);
+    }
+
     /**
      * 解析子流程多实例来源类型
      *

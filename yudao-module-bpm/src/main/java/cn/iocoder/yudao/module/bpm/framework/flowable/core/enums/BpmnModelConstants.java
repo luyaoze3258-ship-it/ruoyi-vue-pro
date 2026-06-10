@@ -69,6 +69,11 @@ public interface BpmnModelConstants {
     String USER_TASK_APPROVE_METHOD = "approveMethod";
 
     /**
+     * BPMN UserTask 的扩展属性，用于标记 AI 审批设置
+     */
+    String USER_TASK_AI_APPROVAL_SETTING = "aiApprovalSetting";
+
+    /**
      * BPMN Child Process 的扩展属性，用于标记多实例来源类型
      */
     String CHILD_PROCESS_MULTI_INSTANCE_SOURCE_TYPE = "childProcessMultiInstanceSourceType";

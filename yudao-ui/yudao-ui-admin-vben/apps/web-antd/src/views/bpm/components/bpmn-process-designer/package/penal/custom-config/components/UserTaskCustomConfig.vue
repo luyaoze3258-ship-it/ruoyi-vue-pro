@@ -153,10 +153,43 @@ const signEnable = ref({ value: false });
 // 审批意见
 const reasonRequire = ref({ value: false });
 
+// AI 审批
+const aiApprovalSettingEl = ref<any>();
+const aiApprovalEnable = ref(false);
+const aiApprovalAdoptResult = ref(false);
+
 const elExtensionElements = ref<any>();
 const otherExtensions = ref<any>();
 const bpmnElement = ref<any>();
 const bpmnInstances = () => (window as any)?.bpmnInstances;
+
+function parseAiApprovalSetting(value?: string) {
+  if (!value) {
+    return {
+      enable: false,
+      adoptResult: false,
+    };
+  }
+  try {
+    const setting = JSON.parse(value);
+    return {
+      enable: Boolean(setting?.enable),
+      adoptResult: Boolean(setting?.adoptResult),
+    };
+  } catch {
+    return {
+      enable: false,
+      adoptResult: false,
+    };
+  }
+}
+
+function stringifyAiApprovalSetting() {
+  return JSON.stringify({
+    enable: aiApprovalEnable.value,
+    adoptResult: aiApprovalAdoptResult.value,
+  });
+}
 
 const resetCustomConfigList = () => {
   bpmnElement.value = bpmnInstances().bpmnElement;
@@ -279,6 +312,21 @@ const resetCustomConfigList = () => {
     ) ||
     bpmnInstances().moddle.create(`${prefix}:ReasonRequire`, { value: false });
 
+  // AI 审批
+  aiApprovalSettingEl.value =
+    elExtensionElements.value.values?.find(
+      (ex: any) => ex.$type === `${prefix}:AiApprovalSetting`,
+    ) ||
+    bpmnInstances().moddle.create(`${prefix}:AiApprovalSetting`, {
+      value: stringifyAiApprovalSetting(),
+    });
+  const aiApprovalSetting = parseAiApprovalSetting(
+    aiApprovalSettingEl.value.value,
+  );
+  aiApprovalEnable.value = aiApprovalSetting.enable;
+  aiApprovalAdoptResult.value = aiApprovalSetting.adoptResult;
+  aiApprovalSettingEl.value.value = stringifyAiApprovalSetting();
+
   // 保留剩余扩展元素，便于后面更新该元素对应属性
   otherExtensions.value =
     elExtensionElements.value.values?.filter(
@@ -292,7 +340,8 @@ const resetCustomConfigList = () => {
         ex.$type !== `${prefix}:FieldsPermission` &&
         ex.$type !== `${prefix}:ApproveType` &&
         ex.$type !== `${prefix}:SignEnable` &&
-        ex.$type !== `${prefix}:ReasonRequire`,
+        ex.$type !== `${prefix}:ReasonRequire` &&
+        ex.$type !== `${prefix}:AiApprovalSetting`,
     ) ?? [];
 
   // 更新元素扩展属性，避免后续报错
@@ -332,6 +381,15 @@ const updateAssignEmptyUserIds = () => {
   updateElementExtensions();
 };
 
+const updateAiApprovalSetting = () => {
+  if (!aiApprovalEnable.value) {
+    aiApprovalAdoptResult.value = false;
+  }
+  aiApprovalSettingEl.value.value = stringifyAiApprovalSetting();
+
+  updateElementExtensions();
+};
+
 const updateElementExtensions = () => {
   const extensions = bpmnInstances().moddle.create('bpmn:ExtensionElements', {
     values: [
@@ -346,6 +404,7 @@ const updateElementExtensions = () => {
       ...fieldsPermissionEl.value,
       signEnable.value,
       reasonRequire.value,
+      aiApprovalSettingEl.value,
     ],
   });
   bpmnInstances().modeling.updateProperties(toRaw(bpmnElement.value), {
@@ -683,6 +742,28 @@ onMounted(async () => {
         checked-children="是"
         un-checked-children="否"
         @change="updateElementExtensions"
+      />
+    </Form.Item>
+
+    <Divider orientation="left">AI 审批</Divider>
+    <Form.Item name="aiApprovalEnable" label="启用 AI 审批">
+      <Switch
+        v-model:checked="aiApprovalEnable"
+        checked-children="是"
+        un-checked-children="否"
+        @change="updateAiApprovalSetting"
+      />
+    </Form.Item>
+    <Form.Item
+      v-if="aiApprovalEnable"
+      name="aiApprovalAdoptResult"
+      label="采纳 AI 结论"
+    >
+      <Switch
+        v-model:checked="aiApprovalAdoptResult"
+        checked-children="是"
+        un-checked-children="否"
+        @change="updateAiApprovalSetting"
       />
     </Form.Item>
 
