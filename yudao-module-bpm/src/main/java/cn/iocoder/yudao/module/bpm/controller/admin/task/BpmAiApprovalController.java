@@ -10,7 +10,9 @@ import cn.iocoder.yudao.module.bpm.service.ai.BpmAiApprovalCallbackVerifier;
 import cn.iocoder.yudao.module.bpm.service.ai.BpmAiApprovalService;
 import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalCallbackReqDTO;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -48,6 +50,14 @@ public class BpmAiApprovalController {
         String callbackId = request.getHeader(properties.getGuanlan().getCallback().getCallbackIdHeader());
         boolean testMode = BooleanUtil.toBoolean(request.getHeader(properties.getGuanlan().getCallback().getTestModeHeader()));
         return success(aiApprovalService.handleCallback(reqDTO, callbackId, body, testMode, true));
+    }
+
+    @PostMapping("/guanlan/sync")
+    @Operation(summary = "主动查询观澜审批结果")
+    @Parameter(name = "taskId", description = "BPM 任务编号", required = true)
+    @PreAuthorize("@ss.hasPermission('bpm:task:update')")
+    public CommonResult<Boolean> syncGuanlanTaskResult(@RequestParam("taskId") String taskId) {
+        return success(aiApprovalService.syncTaskResultFromGuanlan(taskId));
     }
 
 }

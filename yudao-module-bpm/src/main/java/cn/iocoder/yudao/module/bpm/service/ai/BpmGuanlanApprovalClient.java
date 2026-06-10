@@ -47,6 +47,11 @@ public class BpmGuanlanApprovalClient {
         return exchange(buildGlobalConfig(), "/api/v1/approval/tasks/" + taskId, HttpMethod.GET, null, null).getBody();
     }
 
+    public TaskResult getTask(String taskId, Config config) {
+        return parseTaskResult(exchange(config, "/api/v1/approval/tasks/" + taskId, HttpMethod.GET, null, null)
+                .getBody());
+    }
+
     public String getTaskByExternalId(String externalId) {
         return exchange(buildGlobalConfig(), "/api/v1/approval/tasks/by-external/" + externalId, HttpMethod.GET, null, null).getBody();
     }
@@ -109,6 +114,20 @@ public class BpmGuanlanApprovalClient {
         return dataNode == null ? null : getText(dataNode, "status");
     }
 
+    TaskResult parseTaskResult(String responseBody) {
+        if (StrUtil.isBlank(responseBody)) {
+            return new TaskResult();
+        }
+        JsonNode rootNode = JsonUtils.parseTree(responseBody);
+        JsonNode taskNode = rootNode.has("data") && rootNode.get("data").isObject() ? rootNode.get("data") : rootNode;
+        return new TaskResult()
+                .setTaskId(getText(taskNode, "task_id", "taskId", "id"))
+                .setExternalId(getText(taskNode, "external_id", "externalId"))
+                .setStatus(getText(taskNode, "status"))
+                .setVerdict(getText(taskNode, "verdict"))
+                .setOpinion(getText(taskNode, "opinion"));
+    }
+
     private static String getText(JsonNode node, String... fields) {
         if (node == null || !node.isObject()) {
             return null;
@@ -128,6 +147,21 @@ public class BpmGuanlanApprovalClient {
         private String baseUrl;
 
         private String apiKey;
+
+    }
+
+    @Data
+    public static class TaskResult {
+
+        private String taskId;
+
+        private String externalId;
+
+        private String status;
+
+        private String verdict;
+
+        private String opinion;
 
     }
 

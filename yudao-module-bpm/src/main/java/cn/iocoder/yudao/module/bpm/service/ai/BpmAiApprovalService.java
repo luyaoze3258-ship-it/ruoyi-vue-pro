@@ -23,4 +23,12 @@ public interface BpmAiApprovalService {
      */
     void syncBusinessResultIfNecessary(String taskId, String finalVerdict, String finalOpinion);
 
+    /**
+     * 主动查询观澜任务结果，并在任务完成后应用 AI 结论。
+     *
+     * @param taskId BPM 任务编号
+     * @return 是否已同步完成结果
+     */
+    boolean syncTaskResultFromGuanlan(String taskId);
+
 }

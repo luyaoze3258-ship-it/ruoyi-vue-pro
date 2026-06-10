@@ -120,3 +120,10 @@ export const withdrawTask = async (taskId: string) => {
     params: { taskId },
   });
 };
+
+/** 主动同步观澜 AI 审批结果 */
+export const syncGuanlanAiApprovalTask = async (taskId: string) => {
+  return await requestClient.post('/bpm/ai-approval/guanlan/sync', null, {
+    params: { taskId },
+  });
+};

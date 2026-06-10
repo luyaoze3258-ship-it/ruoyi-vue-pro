@@ -176,6 +176,31 @@ public class BpmAiApprovalServiceImpl implements BpmAiApprovalService {
         aiApprovalTaskMapper.updateById(updateObj);
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean syncTaskResultFromGuanlan(String taskId) {
+        BpmAiApprovalTaskDO approvalTask = aiApprovalTaskMapper.selectByTaskIdForUpdate(taskId);
+        if (approvalTask == null || StrUtil.isBlank(approvalTask.getGuanlanTaskId())
+                || StrUtil.isNotBlank(approvalTask.getVerdict())) {
+            return false;
+        }
+        BpmGuanlanApprovalClient.TaskResult taskResult = guanlanApprovalClient.getTask(approvalTask.getGuanlanTaskId(),
+                buildConfig(approvalTask));
+        if (taskResult == null || !StrUtil.equalsIgnoreCase(taskResult.getStatus(), "completed")
+                || StrUtil.isBlank(taskResult.getVerdict())) {
+            return false;
+        }
+        BpmAiApprovalCallbackReqDTO callbackReqDTO = new BpmAiApprovalCallbackReqDTO()
+                .setTaskId(StrUtil.blankToDefault(taskResult.getTaskId(), approvalTask.getGuanlanTaskId()))
+                .setExternalId(StrUtil.blankToDefault(taskResult.getExternalId(), approvalTask.getExternalId()))
+                .setStatus(taskResult.getStatus())
+                .setVerdict(taskResult.getVerdict())
+                .setOpinion(taskResult.getOpinion());
+        updateCallbackResult(approvalTask, callbackReqDTO, "poll:" + approvalTask.getGuanlanTaskId());
+        applyDecision(approvalTask, callbackReqDTO);
+        return true;
+    }
+
     private BpmAiApprovalSubmitReqDTO buildSubmitReqDTO(ProcessInstance processInstance, Task task, String externalId) {
         Map<String, Object> document = new HashMap<>();
         document.put("processInstanceId", processInstance.getId());

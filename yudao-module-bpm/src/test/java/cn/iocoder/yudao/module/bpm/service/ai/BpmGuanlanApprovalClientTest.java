@@ -22,4 +22,17 @@ class BpmGuanlanApprovalClientTest {
         assertEquals("task-6", client.parseSubmitTaskId("{\"data\":{\"id\":\"task-6\"}}"));
     }
 
+    @Test
+    void parseTaskResult_shouldSupportGuanlanTaskResponse() {
+        BpmGuanlanApprovalClient.TaskResult taskResult = client.parseTaskResult("{\"task_id\":\"task-1\","
+                + "\"external_id\":\"external-1\",\"status\":\"completed\",\"verdict\":\"yellow\","
+                + "\"opinion\":\"需要人工复核\"}");
+
+        assertEquals("task-1", taskResult.getTaskId());
+        assertEquals("external-1", taskResult.getExternalId());
+        assertEquals("completed", taskResult.getStatus());
+        assertEquals("yellow", taskResult.getVerdict());
+        assertEquals("需要人工复核", taskResult.getOpinion());
+    }
+
 }

@@ -125,17 +125,56 @@ public class BpmAiApprovalServiceImplTest extends BaseMockitoUnitTest {
         verify(bpmTaskService, never()).rejectTask(any(), any());
     }
 
+    @Test
+    public void syncTaskResultFromGuanlan_shouldApplyCompletedResult() {
+        BpmAiApprovalTaskDO approvalTask = BpmAiApprovalTaskDO.builder()
+                .id(10L)
+                .taskId("task-1")
+                .externalId("external-1")
+                .guanlanTaskId("guanlan-task-1")
+                .guanlanBaseUrl("http://guanlan.guixucloud.cn")
+                .guanlanApiKey("node-api-key")
+                .adoptEnabled(false)
+                .build();
+        when(aiApprovalTaskMapper.selectByTaskIdForUpdate("task-1")).thenReturn(approvalTask);
+        guanlanApprovalClient.taskResult = new BpmGuanlanApprovalClient.TaskResult()
+                .setTaskId("guanlan-task-1")
+                .setExternalId("external-1")
+                .setStatus("completed")
+                .setVerdict("yellow")
+                .setOpinion("需人工复核");
+
+        boolean synced = aiApprovalService.syncTaskResultFromGuanlan("task-1");
+
+        org.junit.jupiter.api.Assertions.assertTrue(synced);
+        verify(aiApprovalTaskMapper).updateById(argThat((BpmAiApprovalTaskDO updateObj) ->
+                Long.valueOf(10L).equals(updateObj.getId())
+                        && "poll:guanlan-task-1".equals(updateObj.getCallbackId())
+                        && "yellow".equals(updateObj.getVerdict())
+                        && "需人工复核".equals(updateObj.getOpinion())));
+        verify(flowableTaskService).setVariableLocal(eq("task-1"), eq(BpmnVariableConstants.TASK_VARIABLE_REASON),
+                eq("AI 审批结论：yellow；需人工复核"));
+    }
+
     private static class FakeGuanlanApprovalClient extends BpmGuanlanApprovalClient {
 
         private BpmAiApprovalSubmitRespDTO submitRespDTO;
 
         private Config submitConfig;
 
+        private TaskResult taskResult;
+
         @Override
         public BpmAiApprovalSubmitRespDTO submit(cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalSubmitReqDTO reqDTO,
                                                  Config config) {
             this.submitConfig = config;
             return submitRespDTO;
+        }
+
+        @Override
+        public TaskResult getTask(String taskId, Config config) {
+            this.submitConfig = config;
+            return taskResult;
         }
 
     }

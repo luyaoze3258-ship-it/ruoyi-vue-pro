@@ -23,7 +23,7 @@ spec:
         - name: tencent-registry
       containers:
         - name: server
-          image: ekb-repo.tencentcloudcr.com/library/ruoyi-vue-pro-server:2026.05-ai-approval-guanlan-cn-safe-20260610222108
+          image: ekb-repo.tencentcloudcr.com/library/ruoyi-vue-pro-server:2026.05-ai-approval-poll-20260610230739
           imagePullPolicy: Always
           ports:
             - name: http
@@ -135,7 +135,7 @@ spec:
         - name: tencent-registry
       containers:
         - name: admin
-          image: ekb-repo.tencentcloudcr.com/library/ruoyi-vue-pro-admin:2026.05-ai-approval-real-20260610195535
+          image: ekb-repo.tencentcloudcr.com/library/ruoyi-vue-pro-admin:2026.05-ai-approval-poll-20260610231458
           imagePullPolicy: Always
           ports:
             - name: http
