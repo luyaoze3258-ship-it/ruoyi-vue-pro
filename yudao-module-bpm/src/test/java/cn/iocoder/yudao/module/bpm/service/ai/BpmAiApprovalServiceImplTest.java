@@ -67,7 +67,7 @@ public class BpmAiApprovalServiceImplTest extends BaseMockitoUnitTest {
                 .setEnable(true)
                 .setAdoptResult(true)
                 .setAgentName("观澜费用审核")
-                .setBaseUrl("https://guanlan.guixucloud.com/")
+                .setBaseUrl("http://guanlan.guixucloud.cn")
                 .setApiKey("node-api-key"), userTask);
         guanlanApprovalClient.submitRespDTO = new BpmAiApprovalSubmitRespDTO()
                 .setTaskId("guanlan-task-1").setStatus("accepted");
@@ -76,9 +76,9 @@ public class BpmAiApprovalServiceImplTest extends BaseMockitoUnitTest {
 
         verify(aiApprovalTaskMapper).insert(argThat((BpmAiApprovalTaskDO approvalTask) ->
                 "观澜费用审核".equals(approvalTask.getGuanlanAgentName())
-                        && "https://guanlan.guixucloud.com/".equals(approvalTask.getGuanlanBaseUrl())
+                        && "http://guanlan.guixucloud.cn".equals(approvalTask.getGuanlanBaseUrl())
                         && "node-api-key".equals(approvalTask.getGuanlanApiKey())));
-        org.junit.jupiter.api.Assertions.assertEquals("https://guanlan.guixucloud.com/",
+        org.junit.jupiter.api.Assertions.assertEquals("http://guanlan.guixucloud.cn",
                 guanlanApprovalClient.submitConfig.getBaseUrl());
         org.junit.jupiter.api.Assertions.assertEquals("node-api-key", guanlanApprovalClient.submitConfig.getApiKey());
     }

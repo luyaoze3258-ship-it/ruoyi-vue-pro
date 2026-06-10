@@ -6,11 +6,15 @@ import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * API 访问日志脱敏工具。
@@ -22,6 +26,13 @@ public class ApiAccessLogSanitizer {
             "password", "token", "accessToken", "refreshToken",
             "apiKey", "apikey", "agentApiKey", "secret", "clientSecret", "hmacSecret"
     };
+    private static final String SENSITIVE_KEY_PATTERN = "password|token|accessToken|refreshToken|apiKey|apikey"
+            + "|agentApiKey|secret|clientSecret|hmacSecret";
+    private static final Pattern JSON_TEXT_SECRET_PATTERN = Pattern.compile(
+            "(?i)(\\\"(?:" + SENSITIVE_KEY_PATTERN + ")\\\"\\s*:\\s*\\\")[^\\\"]*(\\\")");
+    private static final Pattern KEY_VALUE_TEXT_SECRET_PATTERN = Pattern.compile(
+            "(?i)((?:" + SENSITIVE_KEY_PATTERN + ")\\s*[=:]\\s*)[^\\s,&;<>\\\"]+");
+    private static final Pattern OPENAI_STYLE_KEY_PATTERN = Pattern.compile("sk-[A-Za-z0-9_-]{12,}");
 
     public static String sanitizeMap(Map<String, ?> map, String[] sanitizeKeys) {
         if (CollUtil.isEmpty(map)) {
@@ -57,7 +68,13 @@ public class ApiAccessLogSanitizer {
         }
         // 情况一：数组，遍历处理
         if (node.isArray()) {
-            for (JsonNode childNode : node) {
+            ArrayNode arrayNode = (ArrayNode) node;
+            for (int i = 0; i < arrayNode.size(); i++) {
+                JsonNode childNode = arrayNode.get(i);
+                if (childNode.isTextual()) {
+                    arrayNode.set(i, TextNode.valueOf(sanitizeText(childNode.asText())));
+                    continue;
+                }
                 sanitizeJson(childNode, sanitizeKeys);
             }
             return;
@@ -67,6 +84,7 @@ public class ApiAccessLogSanitizer {
             return;
         }
         //  情况三：Object，遍历处理
+        ObjectNode objectNode = (ObjectNode) node;
         Iterator<Map.Entry<String, JsonNode>> iterator = node.fields();
         while (iterator.hasNext()) {
             Map.Entry<String, JsonNode> entry = iterator.next();
@@ -74,8 +92,21 @@ public class ApiAccessLogSanitizer {
                 iterator.remove();
                 continue;
             }
+            if (entry.getValue().isTextual()) {
+                objectNode.put(entry.getKey(), sanitizeText(entry.getValue().asText()));
+                continue;
+            }
             sanitizeJson(entry.getValue(), sanitizeKeys);
         }
+    }
+
+    private static String sanitizeText(String text) {
+        if (StrUtil.isBlank(text)) {
+            return text;
+        }
+        String sanitized = JSON_TEXT_SECRET_PATTERN.matcher(text).replaceAll("$1<hidden>$2");
+        sanitized = KEY_VALUE_TEXT_SECRET_PATTERN.matcher(sanitized).replaceAll("$1<hidden>");
+        return OPENAI_STYLE_KEY_PATTERN.matcher(sanitized).replaceAll("<hidden>");
     }
 
     private static boolean isSensitiveKey(String key, String[] sanitizeKeys) {

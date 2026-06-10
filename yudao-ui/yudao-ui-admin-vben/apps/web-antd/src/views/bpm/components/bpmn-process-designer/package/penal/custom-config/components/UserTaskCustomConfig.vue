@@ -805,7 +805,7 @@ onMounted(async () => {
     >
       <Input
         v-model:value="aiApprovalBaseUrl"
-        placeholder="https://guanlan.guixucloud.com/"
+        placeholder="http://guanlan.guixucloud.cn"
         @change="updateAiApprovalSetting"
       />
     </Form.Item>

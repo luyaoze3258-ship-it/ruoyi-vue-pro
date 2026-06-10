@@ -232,7 +232,7 @@ public class BpmSimpleModelNodeVO {
         @Schema(description = "观澜智能体名称", example = "费用审核智能体")
         private String agentName;
 
-        @Schema(description = "观澜 API Base URL", example = "https://guanlan.guixucloud.com/")
+        @Schema(description = "观澜 API Base URL", example = "http://guanlan.guixucloud.cn")
         private String baseUrl;
 
         @Schema(description = "观澜 Agent API Key", example = "sk-xxx")

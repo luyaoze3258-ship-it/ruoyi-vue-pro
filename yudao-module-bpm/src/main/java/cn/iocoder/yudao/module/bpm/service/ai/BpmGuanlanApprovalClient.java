@@ -6,7 +6,7 @@ import cn.iocoder.yudao.module.bpm.framework.ai.config.BpmAiApprovalProperties;
 import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalBusinessResultReqDTO;
 import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalSubmitReqDTO;
 import cn.iocoder.yudao.module.bpm.service.ai.dto.BpmAiApprovalSubmitRespDTO;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Data;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
@@ -37,10 +37,9 @@ public class BpmGuanlanApprovalClient {
         body.put("document", reqDTO.getDocument());
         ResponseEntity<String> response = exchange(config, "/api/v1/approval/submit", HttpMethod.POST, body,
                 reqDTO.getExternalId());
-        GuanlanSubmitResponse submitResponse = JsonUtils.parseObject(response.getBody(), GuanlanSubmitResponse.class);
         BpmAiApprovalSubmitRespDTO result = new BpmAiApprovalSubmitRespDTO();
-        result.setTaskId(submitResponse != null ? submitResponse.getTaskId() : null);
-        result.setStatus(submitResponse != null ? submitResponse.getStatus() : null);
+        result.setTaskId(parseSubmitTaskId(response.getBody()));
+        result.setStatus(parseSubmitStatus(response.getBody()));
         return result;
     }
 
@@ -84,22 +83,51 @@ public class BpmGuanlanApprovalClient {
                 .setApiKey(properties.getGuanlan().getApiKey());
     }
 
+    String parseSubmitTaskId(String responseBody) {
+        if (StrUtil.isBlank(responseBody)) {
+            return null;
+        }
+        JsonNode rootNode = JsonUtils.parseTree(responseBody);
+        String taskId = getText(rootNode, "task_id", "taskId", "id");
+        if (StrUtil.isNotBlank(taskId)) {
+            return taskId;
+        }
+        JsonNode dataNode = rootNode.get("data");
+        return dataNode == null ? null : getText(dataNode, "task_id", "taskId", "id");
+    }
+
+    private String parseSubmitStatus(String responseBody) {
+        if (StrUtil.isBlank(responseBody)) {
+            return null;
+        }
+        JsonNode rootNode = JsonUtils.parseTree(responseBody);
+        String status = getText(rootNode, "status");
+        if (StrUtil.isNotBlank(status)) {
+            return status;
+        }
+        JsonNode dataNode = rootNode.get("data");
+        return dataNode == null ? null : getText(dataNode, "status");
+    }
+
+    private static String getText(JsonNode node, String... fields) {
+        if (node == null || !node.isObject()) {
+            return null;
+        }
+        for (String field : fields) {
+            JsonNode value = node.get(field);
+            if (value != null && value.isValueNode() && StrUtil.isNotBlank(value.asText())) {
+                return value.asText();
+            }
+        }
+        return null;
+    }
+
     @Data
     public static class Config {
 
         private String baseUrl;
 
         private String apiKey;
-
-    }
-
-    @Data
-    private static class GuanlanSubmitResponse {
-
-        @JsonProperty("task_id")
-        private String taskId;
-
-        private String status;
 
     }
 

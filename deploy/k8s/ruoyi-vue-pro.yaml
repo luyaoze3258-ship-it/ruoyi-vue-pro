@@ -23,7 +23,7 @@ spec:
         - name: tencent-registry
       containers:
         - name: server
-          image: ekb-repo.tencentcloudcr.com/library/ruoyi-vue-pro-server:2026.05-ai-approval-real-logsafe-20260610201829
+          image: ekb-repo.tencentcloudcr.com/library/ruoyi-vue-pro-server:2026.05-ai-approval-guanlan-cn-safe-20260610222108
           imagePullPolicy: Always
           ports:
             - name: http

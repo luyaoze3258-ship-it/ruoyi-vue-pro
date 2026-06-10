@@ -1186,7 +1186,7 @@ onMounted(() => {
                   <span class="w-24">BaseURL</span>
                   <Input
                     v-model:value="configForm.aiApprovalBaseUrl"
-                    placeholder="https://guanlan.guixucloud.com/"
+                    placeholder="http://guanlan.guixucloud.cn"
                   />
                 </div>
               </FormItem>

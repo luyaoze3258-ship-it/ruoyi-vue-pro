@@ -21,7 +21,7 @@ public class BpmAiApprovalSettingBpmnModelUtilsTest {
         BpmSimpleModelNodeVO.AiApprovalSetting aiApprovalSetting = new BpmSimpleModelNodeVO.AiApprovalSetting()
                 .setEnable(true).setAdoptResult(true)
                 .setAgentName("观澜费用审核")
-                .setBaseUrl("https://guanlan.guixucloud.com/")
+                .setBaseUrl("http://guanlan.guixucloud.cn")
                 .setApiKey("test-api-key");
         BpmSimpleModelNodeVO node = new BpmSimpleModelNodeVO()
                 .setId("Activity_ai")
@@ -51,7 +51,7 @@ public class BpmAiApprovalSettingBpmnModelUtilsTest {
         assertTrue(parsedSetting.getEnable());
         assertTrue(parsedSetting.getAdoptResult());
         assertEquals("观澜费用审核", parsedSetting.getAgentName());
-        assertEquals("https://guanlan.guixucloud.com/", parsedSetting.getBaseUrl());
+        assertEquals("http://guanlan.guixucloud.cn", parsedSetting.getBaseUrl());
         assertEquals("test-api-key", parsedSetting.getApiKey());
     }
 
@@ -60,7 +60,7 @@ public class BpmAiApprovalSettingBpmnModelUtilsTest {
         BpmSimpleModelNodeVO.AiApprovalSetting aiApprovalSetting = new BpmSimpleModelNodeVO.AiApprovalSetting()
                 .setEnable(true).setAdoptResult(false)
                 .setAgentName("观澜合同审核")
-                .setBaseUrl("https://guanlan.guixucloud.com/")
+                .setBaseUrl("http://guanlan.guixucloud.cn")
                 .setApiKey("designer-test-api-key");
         org.flowable.bpmn.model.UserTask userTask = new org.flowable.bpmn.model.UserTask();
 
@@ -71,7 +71,7 @@ public class BpmAiApprovalSettingBpmnModelUtilsTest {
         assertTrue(parsedSetting.getEnable());
         assertFalse(parsedSetting.getAdoptResult());
         assertEquals("观澜合同审核", parsedSetting.getAgentName());
-        assertEquals("https://guanlan.guixucloud.com/", parsedSetting.getBaseUrl());
+        assertEquals("http://guanlan.guixucloud.cn", parsedSetting.getBaseUrl());
         assertEquals("designer-test-api-key", parsedSetting.getApiKey());
     }
 

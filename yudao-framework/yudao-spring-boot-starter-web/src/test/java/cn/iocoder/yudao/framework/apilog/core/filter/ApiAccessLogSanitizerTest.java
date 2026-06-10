@@ -13,7 +13,7 @@ class ApiAccessLogSanitizerTest {
     @Test
     void sanitizeJson_shouldRemoveNestedAgentSecrets() {
         String requestBody = "{\"name\":\"test\",\"apiKey\":\"sk-real\","
-                + "\"child\":{\"baseUrl\":\"https://guanlan.guixucloud.com/\",\"clientSecret\":\"secret-real\"},"
+                + "\"child\":{\"baseUrl\":\"http://guanlan.guixucloud.cn\",\"clientSecret\":\"secret-real\"},"
                 + "\"list\":[{\"refreshToken\":\"token-real\"}]}";
 
         String result = ApiAccessLogSanitizer.sanitizeJson(requestBody, null);
@@ -22,6 +22,23 @@ class ApiAccessLogSanitizerTest {
         assertFalse(result.contains("secret-real"));
         assertFalse(result.contains("token-real"));
         assertTrue(result.contains("baseUrl"));
+    }
+
+    @Test
+    void sanitizeJson_shouldRemoveSecretsEmbeddedInTextFields() {
+        String requestBody = "{\"bpmnXml\":\"<flowable:aiApprovalSetting><![CDATA["
+                + "{\\\"baseUrl\\\":\\\"http://guanlan.guixucloud.cn\\\","
+                + "\\\"apiKey\\\":\\\"sk-9c3d2ee00c0f42efbaf1992054dcfb7b\\\"}"
+                + "]]></flowable:aiApprovalSetting>\","
+                + "\"notes\":\"agentApiKey=sk-embedded clientSecret=secret-real\"}";
+
+        String result = ApiAccessLogSanitizer.sanitizeJson(requestBody, null);
+
+        assertFalse(result.contains("sk-9c3d2ee00c0f42efbaf1992054dcfb7b"));
+        assertFalse(result.contains("sk-embedded"));
+        assertFalse(result.contains("secret-real"));
+        assertTrue(result.contains("http://guanlan.guixucloud.cn"));
+        assertTrue(result.contains("<hidden>"));
     }
 
     @Test
