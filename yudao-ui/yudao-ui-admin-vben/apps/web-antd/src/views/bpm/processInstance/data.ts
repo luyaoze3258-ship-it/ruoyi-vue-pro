@@ -81,7 +81,9 @@ export function useGridColumns(): VxeTableGridOptions['columns'] {
     {
       field: 'summary',
       title: '摘要',
-      minWidth: 200,
+      align: 'left',
+      headerAlign: 'center',
+      minWidth: 360,
       slots: {
         default: 'slot-summary',
       },

@@ -11,7 +11,7 @@ import {
   DICT_TYPE,
 } from '@vben/constants';
 
-import { Button, message, Textarea } from 'ant-design-vue';
+import { Button, message, Textarea, Tooltip } from 'ant-design-vue';
 
 import { ACTION_ICON, TableAction, useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getProcessDefinition } from '#/api/bpm/definition';
@@ -94,6 +94,25 @@ function handleCancel(row: BpmProcessInstanceApi.ProcessInstance) {
   });
 }
 
+type ProcessSummary = NonNullable<
+  BpmProcessInstanceApi.ProcessInstance['summary']
+>;
+type ProcessSummaryItem = ProcessSummary[number];
+
+function formatSummaryItem(item: ProcessSummaryItem) {
+  return `${item.key}：${item.value}`;
+}
+
+function getSummaryPreview(summary?: ProcessSummary) {
+  return summary?.slice(0, 1) ?? [];
+}
+
+function getSummaryText(summary?: ProcessSummary) {
+  return summary && summary.length > 0
+    ? summary.map((item) => formatSummaryItem(item)).join('\n')
+    : '-';
+}
+
 const [Grid, gridApi] = useVbenVxeGrid({
   formOptions: {
     schema: useGridFormSchema(),
@@ -136,16 +155,29 @@ const [Grid, gridApi] = useVbenVxeGrid({
 
     <Grid table-title="流程状态">
       <template #slot-summary="{ row }">
-        <div
-          class="flex flex-col py-2"
+        <Tooltip
           v-if="row.summary && row.summary.length > 0"
+          placement="topLeft"
         >
-          <div v-for="(item, index) in row.summary" :key="index">
-            <span class="text-gray-500">
-              {{ item.key }} : {{ item.value }}
-            </span>
+          <template #title>
+            <div class="max-w-[520px] whitespace-pre-wrap leading-6">
+              {{ getSummaryText(row.summary) }}
+            </div>
+          </template>
+          <div class="summary-cell">
+            <div
+              v-for="(item, index) in getSummaryPreview(row.summary)"
+              :key="index"
+              class="summary-cell__line"
+            >
+              <span class="summary-cell__key">{{ item.key }}：</span>
+              <span class="summary-cell__value">{{ item.value }}</span>
+            </div>
+            <div v-if="row.summary.length > 1" class="summary-cell__more">
+              +{{ row.summary.length - 1 }}
+            </div>
           </div>
-        </div>
+        </Tooltip>
         <div v-else>-</div>
       </template>
       <template #slot-status="{ row }">
@@ -215,3 +247,45 @@ const [Grid, gridApi] = useVbenVxeGrid({
     </Grid>
   </Page>
 </template>
+
+<style scoped>
+.summary-cell {
+  display: flex;
+  max-width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  color: hsl(var(--muted-foreground));
+  line-height: 20px;
+}
+
+.summary-cell__line {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.summary-cell__key {
+  flex: 0 0 auto;
+  color: hsl(var(--foreground));
+}
+
+.summary-cell__value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-cell__more {
+  flex: 0 0 auto;
+  border-radius: 4px;
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+  line-height: 18px;
+  padding: 0 6px;
+}
+</style>

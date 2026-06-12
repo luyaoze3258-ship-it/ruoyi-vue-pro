@@ -137,7 +137,7 @@ spec:
         - name: tencent-registry
       containers:
         - name: admin
-          image: ekb-repo.tencentcloudcr.com/library/ruoyi-vue-pro-admin:2026.05-ai-assistant-ui-20260611022709
+          image: ekb-repo.tencentcloudcr.com/library/ruoyi-vue-pro-admin:2026.05-summary-cell-20260612113940
           imagePullPolicy: Always
           ports:
             - name: http
